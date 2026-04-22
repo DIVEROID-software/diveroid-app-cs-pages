@@ -2,7 +2,7 @@
 <html><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DIVEROID 제주 다이브 포인트 맵</title>
+<title>DIVEROID Jeju Dive Points Map</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -35,16 +35,16 @@ hr{margin:10px 0;border:none;border-top:1px solid #eee;}
 </head><body>
 <div id="map"></div>
 <div id="panel">
-  <h2>🤿 DIVEROID 제주 다이브 포인트</h2>
-  <input id="search" type="text" placeholder="포인트 검색..." oninput="searchPt(this.value)">
-  <div class="stat"><span>총 포인트</span><span class="badge">336개</span></div>
-  <div class="stat"><span>클러스터 기반 (로그)</span><span style="color:#27ae60;font-weight:600">336개</span></div>
+  <h2>🤿 DIVEROID Jeju Dive Points</h2>
+  <input id="search" type="text" placeholder="Search points..." oninput="searchPt(this.value)">
+  <div class="stat"><span>Total Points</span><span class="badge">336</span></div>
+  <div class="stat"><span>Log-based Clusters</span><span style="color:#27ae60;font-weight:600">336</span></div>
   <hr>
-  <div class="legend"><span class="dot" style="background:#27ae60"></span>로그 기반 포인트</div>
-  <div class="legend"><span class="dot" style="background:#50A9FC"></span>기존 DB 포인트</div>
+  <div class="legend"><span class="dot" style="background:#27ae60"></span>Log-based Points</div>
+  <div class="legend"><span class="dot" style="background:#50A9FC"></span>Existing DB Points</div>
   <hr>
-  <div style="font-size:11px;color:#999;margin-bottom:4px;">크기 = 다이브 로그 수</div>
-  <button id="dl-btn" onclick="downloadCSV()">📥 CSV 다운로드 (청 전달용)</button>
+  <div style="font-size:11px;color:#999;margin-bottom:4px;">Size = Number of dive logs</div>
+  <button id="dl-btn" onclick="downloadCSV()">📥 Download CSV</button>
 </div>
 <script>
 const map = L.map('map').setView([33.35, 126.55], 10);
@@ -63,7 +63,7 @@ pts.forEach(p => {
     <div style="min-width:140px">
       <b style="font-size:14px">${p.name}</b><br>
       <span style="color:#888;font-size:12px">${p.name_en}</span><br>
-      ${p.log_count > 0 ? `<br>📊 <b>${p.log_count}</b>개 다이브 로그` : ''}
+      ${p.log_count > 0 ? `<br>📊 <b>${p.log_count}</b> dive logs` : ''}
     </div>
   `).addTo(map);
   markers.push({m, p});
@@ -82,7 +82,7 @@ function searchPt(q) {
 }
 
 function downloadCSV() {
-  const rows = ['\uFEFF이름,영문이름,위도,경도,로그수'];
+  const rows = ['\uFEFFname,name_en,lat,lng,log_count'];
   pts.forEach(p => rows.push(`${p.name},${p.name_en},${p.lat},${p.lng},${p.log_count}`));
   const blob = new Blob([rows.join('\n')], {type:'text/csv;charset=utf-8;'});
   const a = document.createElement('a');
