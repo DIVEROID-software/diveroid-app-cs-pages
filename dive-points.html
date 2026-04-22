@@ -56,7 +56,7 @@ const markers = [];
 
 pts.forEach(p => {
   const r = p.log_count > 0 ? Math.min(5 + Math.log(p.log_count+1)*2.5, 20) : 6;
-  const color = p.log_count > 0 ? '#27ae60' : '#50A9FC';
+  const color = p.source === 'db' ? '#50A9FC' : '#27ae60';
   const m = L.circleMarker([p.lat, p.lng], {
     radius:r, fillColor:color, color:'#fff', weight:1.5, fillOpacity:0.85
   }).bindPopup(`
