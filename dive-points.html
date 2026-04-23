@@ -1,94 +1,277 @@
-<!DOCTYPE html>
-<html><head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DIVEROID Jeju Dive Points Map</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;}
-#map{height:100vh;}
-#panel{
-  position:absolute;top:10px;right:10px;z-index:1000;
-  background:white;border-radius:14px;padding:18px;
-  box-shadow:0 4px 24px rgba(0,0,0,.15);min-width:240px;
-}
-#panel h2{font-size:15px;font-weight:700;margin-bottom:12px;color:#1a1a2e;}
-.stat{display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;}
-.badge{background:#50A9FC;color:white;border-radius:20px;padding:2px 8px;font-size:12px;font-weight:600;}
-.legend{display:flex;align-items:center;margin-bottom:5px;font-size:12px;color:#555;}
-.dot{width:11px;height:11px;border-radius:50%;display:inline-block;margin-right:7px;flex-shrink:0;}
-hr{margin:10px 0;border:none;border-top:1px solid #eee;}
-#dl-btn{
-  display:block;width:100%;margin-top:12px;padding:9px;
-  background:#50A9FC;color:white;border:none;border-radius:9px;
-  cursor:pointer;font-size:13px;font-weight:600;letter-spacing:.3px;
-}
-#dl-btn:hover{background:#3d95e8;}
-#search{
-  width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:8px;
-  font-size:13px;margin-bottom:10px;outline:none;
-}
-#search:focus{border-color:#50A9FC;}
-</style>
-</head><body>
-<div id="map"></div>
-<div id="panel">
-  <h2>🤿 DIVEROID Jeju Dive Points</h2>
-  <input id="search" type="text" placeholder="Search points..." oninput="searchPt(this.value)">
-  <div class="stat"><span>Total Points</span><span class="badge">336</span></div>
-  <div class="stat"><span>Log-based Clusters</span><span style="color:#27ae60;font-weight:600">336</span></div>
-  <hr>
-  <div class="legend"><span class="dot" style="background:#27ae60"></span>Log-based Points</div>
-  <div class="legend"><span class="dot" style="background:#50A9FC"></span>Existing DB Points</div>
-  <hr>
-  <div style="font-size:11px;color:#999;margin-bottom:4px;">Size = Number of dive logs</div>
-  <button id="dl-btn" onclick="downloadCSV()">📥 Download CSV</button>
-</div>
-<script>
-const map = L.map('map').setView([33.35, 126.55], 10);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-  {attribution:'© CARTO | DIVEROID'}).addTo(map);
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DIVEROID Jeju Dive Points (Overlay POC)</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+      #map {
+        height: 100vh;
+      }
+      #panel {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+        background: white;
+        border-radius: 14px;
+        padding: 18px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+        min-width: 260px;
+      }
+      #panel h2 {
+        font-size: 15px;
+        font-weight: 700;
+        margin-bottom: 6px;
+        color: #1a1a2e;
+      }
+      #panel .sub {
+        font-size: 11px;
+        color: #888;
+        margin-bottom: 12px;
+      }
+      .stat {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 6px;
+        font-size: 13px;
+      }
+      .badge {
+        background: #50a9fc;
+        color: white;
+        border-radius: 20px;
+        padding: 2px 10px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .legend {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+        font-size: 12px;
+        color: #555;
+      }
+      .dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 7px;
+        flex-shrink: 0;
+        background: #50a9fc;
+      }
+      hr {
+        margin: 10px 0;
+        border: none;
+        border-top: 1px solid #eee;
+      }
+      #dl-btn {
+        display: block;
+        width: 100%;
+        margin-top: 12px;
+        padding: 9px;
+        background: #50a9fc;
+        color: white;
+        border: none;
+        border-radius: 9px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+      }
+      #dl-btn:hover {
+        background: #3d95e8;
+      }
+      #search {
+        width: 100%;
+        padding: 7px 10px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 13px;
+        margin-bottom: 10px;
+        outline: none;
+      }
+      #search:focus {
+        border-color: #50a9fc;
+      }
+      #tile-toggle {
+        position: absolute;
+        bottom: 16px;
+        left: 16px;
+        z-index: 1000;
+        background: white;
+        border-radius: 10px;
+        padding: 6px 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        color: #333;
+        user-select: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div id="panel">
+      <h2>🤿 Jeju Dive Points</h2>
+      <div class="sub">Overlay POC · Mun Island (문섬)</div>
+      <input
+        id="search"
+        type="text"
+        placeholder="Search points..."
+        oninput="searchPt(this.value)"
+      />
+      <div class="stat">
+        <span>Total Points</span><span class="badge" id="total">9</span>
+      </div>
+      <hr />
+      <div class="legend">
+        <span class="dot"></span>Dive Point (Overlay-derived)
+      </div>
+      <hr />
+      <div style="font-size: 11px; color: #999; margin-bottom: 4px">
+        좌표 출처: 다이빙 리조트 지도 ↔ 구글맵 4점 정렬
+      </div>
+      <button id="dl-btn" onclick="downloadCSV()">📥 Download CSV</button>
+    </div>
+    <div id="tile-toggle" onclick="toggleTile()">🛰️ Satellite</div>
+    <script>
+      const map = L.map("map").setView([33.2299, 126.5644], 15);
 
-const pts = [{"name": "보목포구", "name_en": "Bomokpogu", "lat": 33.238, "lng": 126.608, "log_count": 200, "source": "db"}, {"name": "성산일출봉 앞", "name_en": "Seongsan Ilchulbong Front", "lat": 33.46, "lng": 126.934, "log_count": 126, "source": "scuby"}, {"name": "차귀도 수리코", "name_en": "Chagwido Surico", "lat": 33.358000000000004, "lng": 126.19, "log_count": 112, "source": "scuby"}, {"name": "범섬 새끼섬", "name_en": "Beomsem Saekki Islet", "lat": 33.236000000000004, "lng": 126.514, "log_count": 112, "source": "scuby"}, {"name": "동방파제", "name_en": "East Breakwater", "lat": 33.238, "lng": 126.568, "log_count": 102, "source": "scuby"}, {"name": "범섬 동쪽 직벽", "name_en": "Beomsem East Wall", "lat": 33.236000000000004, "lng": 126.516, "log_count": 90, "source": "scuby"}, {"name": "문섬 한개창", "name_en": "Munseom Hangaechang", "lat": 33.24, "lng": 126.56, "log_count": 84, "source": "scuby"}, {"name": "새섬", "name_en": "Saeseom", "lat": 33.242, "lng": 126.564, "log_count": 84, "source": "db"}, {"name": "범섬 콧구멍 동굴", "name_en": "Beomsem Nostril Cave", "lat": 33.238, "lng": 126.516, "log_count": 81, "source": "scuby"}, {"name": "서귀포항", "name_en": "Seogwipo Port", "lat": 33.24, "lng": 126.562, "log_count": 74, "source": "db"}, {"name": "불턱", "name_en": "Bulteok", "lat": 33.228, "lng": 126.568, "log_count": 67, "source": "scuby"}, {"name": "보목포구", "name_en": "Bomokpogu", "lat": 33.24, "lng": 126.608, "log_count": 60, "source": "db"}, {"name": "서귀포항", "name_en": "Seogwipo Port", "lat": 33.24, "lng": 126.564, "log_count": 54, "source": "db"}, {"name": "새섬", "name_en": "Saeseom", "lat": 33.242, "lng": 126.56, "log_count": 46, "source": "db"}, {"name": "성산일출봉 직벽", "name_en": "Seongsan Ilchulbong Wall", "lat": 33.462, "lng": 126.934, "log_count": 46, "source": "scuby"}, {"name": "서남", "name_en": "Seonam", "lat": 33.228, "lng": 126.564, "log_count": 42, "source": "scuby"}, {"name": "소천지", "name_en": "Socheonji", "lat": 33.242, "lng": 126.602, "log_count": 34, "source": "scuby"}, {"name": "범섬", "name_en": "Beomseom", "lat": 33.218, "lng": 126.514, "log_count": 33, "source": "db"}, {"name": "강정 동방파제 외항", "name_en": "Gangjung East Breakwater", "lat": 33.228, "lng": 126.478, "log_count": 30, "source": "scuby"}, {"name": "새섬", "name_en": "Saeseom", "lat": 33.242, "lng": 126.562, "log_count": 29, "source": "db"}, {"name": "동방파제", "name_en": "East Breakwater (Seogwipo)", "lat": 33.246, "lng": 126.566, "log_count": 28, "source": "db"}, {"name": "신창 고산어초", "name_en": "Sinchang Gosan Reef", "lat": 33.378, "lng": 126.216, "log_count": 25, "source": "scuby"}, {"name": "동방파제", "name_en": "East Breakwater (Seogwipo)", "lat": 33.244, "lng": 126.564, "log_count": 22, "source": "db"}, {"name": "동방파제", "name_en": "East Breakwater (Seogwipo)", "lat": 33.244, "lng": 126.566, "log_count": 20, "source": "db"}, {"name": "화순 인공어초", "name_en": "Hwasun Artificial Reef", "lat": 33.236000000000004, "lng": 126.362, "log_count": 19, "source": "scuby"}, {"name": "차귀도 지실이", "name_en": "Chagwido Jisili", "lat": 33.346000000000004, "lng": 126.18, "log_count": 18, "source": "scuby"}, {"name": "산호정원", "name_en": "Coral Garden", "lat": 33.22, "lng": 126.518, "log_count": 18, "source": "scuby"}, {"name": "볼레낭개", "name_en": "Bollenangae", "lat": 33.24, "lng": 126.606, "log_count": 16, "source": "db"}, {"name": "문섬 불턱 입수처", "name_en": "Munseom Bulteok Entry", "lat": 33.244, "lng": 126.56, "log_count": 15, "source": "scuby"}, {"name": "예르메스", "name_en": "Yermes", "lat": 33.242, "lng": 126.568, "log_count": 14, "source": "scuby"}, {"name": "동방파제", "name_en": "Dongbangpaje", "lat": 33.238, "lng": 126.562, "log_count": 14, "source": "db"}, {"name": "북돌", "name_en": "Bukdol", "lat": 33.226, "lng": 126.562, "log_count": 14, "source": "db"}, {"name": "한개창", "name_en": "Hangaechang", "lat": 33.228, "lng": 126.566, "log_count": 14, "source": "scuby"}, {"name": "제주항 서방파제", "name_en": "Jeju Port West Breakwater", "lat": 33.51, "lng": 126.48, "log_count": 14, "source": "scuby"}, {"name": "성산 신양 섭지코지", "name_en": "Seongsan Seobjikhoji", "lat": 33.432, "lng": 126.928, "log_count": 14, "source": "scuby"}, {"name": "큰 한개창", "name_en": "Big Hangaechang", "lat": 33.236000000000004, "lng": 126.596, "log_count": 13, "source": "scuby"}, {"name": "위미항 동코지", "name_en": "Wimi Harbor East Point", "lat": 33.406, "lng": 126.62, "log_count": 13, "source": "scuby"}, {"name": "문섬 한개창 상단", "name_en": "Munseom Hangaechang Top", "lat": 33.244, "lng": 126.568, "log_count": 13, "source": "scuby"}, {"name": "사각어초 (비양도)", "name_en": "Square Reef (Biyangdo)", "lat": 33.388, "lng": 126.232, "log_count": 13, "source": "db"}, {"name": "동방파제", "name_en": "Dongbangpaje", "lat": 33.238, "lng": 126.564, "log_count": 13, "source": "db"}, {"name": "우도 비양도 콧구멍", "name_en": "Udo Biyangdo Cave", "lat": 33.504, "lng": 126.968, "log_count": 12, "source": "scuby"}, {"name": "탑동 어초", "name_en": "Tapdong Artificial Reef", "lat": 33.51, "lng": 126.482, "log_count": 11, "source": "scuby"}, {"name": "작은 한개창", "name_en": "Small Hangaechang", "lat": 33.232, "lng": 126.598, "log_count": 11, "source": "scuby"}, {"name": "작은 왕문", "name_en": "Small Wangmun", "lat": 33.22, "lng": 126.514, "log_count": 11, "source": "scuby"}, {"name": "동방파제", "name_en": "East Breakwater (Seogwipo)", "lat": 33.242, "lng": 126.566, "log_count": 11, "source": "db"}, {"name": "작은항문", "name_en": "Jageun Hangmun", "lat": 33.234, "lng": 126.566, "log_count": 10, "source": "db"}, {"name": "성산비치", "name_en": "Seongsan Beach", "lat": 33.462, "lng": 126.932, "log_count": 10, "source": "db"}, {"name": "동방파제", "name_en": "East Breakwater", "lat": 33.238, "lng": 126.566, "log_count": 10, "source": "scuby"}, {"name": "문섬 서쪽 직벽 끝", "name_en": "Munseom West Wall End", "lat": 33.226, "lng": 126.544, "log_count": 9, "source": "scuby"}, {"name": "문섬 한개창", "name_en": "Munseom Hangaechang", "lat": 33.242, "lng": 126.556, "log_count": 9, "source": "scuby"}, {"name": "범섬 앞 샌드", "name_en": "Beomsem Sand Flat", "lat": 33.25, "lng": 126.508, "log_count": 9, "source": "scuby"}, {"name": "법환항 입구", "name_en": "Beophwan Harbor Entrance", "lat": 33.252, "lng": 126.51, "log_count": 9, "source": "scuby"}, {"name": "범섬 동쪽 직벽", "name_en": "Beomsem East Wall", "lat": 33.236000000000004, "lng": 126.518, "log_count": 9, "source": "scuby"}, {"name": "새섬", "name_en": "Saeseom", "lat": 33.244, "lng": 126.562, "log_count": 9, "source": "db"}, {"name": "표선 앞바다", "name_en": "Pyoseon Offshore", "lat": 33.314, "lng": 126.712, "log_count": 8, "source": "scuby"}, {"name": "서귀포항 서방파제", "name_en": "Seogwipo Port West Breakwater", "lat": 33.25, "lng": 126.566, "log_count": 8, "source": "scuby"}, {"name": "문섬 불턱", "name_en": "Munseom Bulteok Upper", "lat": 33.246, "lng": 126.552, "log_count": 8, "source": "scuby"}, {"name": "협재 비양도 분홍동산", "name_en": "Hyeopjae Biyangdo Pink Garden", "lat": 33.392, "lng": 126.228, "log_count": 8, "source": "scuby"}, {"name": "예르메스", "name_en": "Yermes", "lat": 33.24, "lng": 126.568, "log_count": 8, "source": "scuby"}, {"name": "서건도", "name_en": "Seogeondo", "lat": 33.232, "lng": 126.51, "log_count": 8, "source": "scuby"}, {"name": "차귀도 썩은여", "name_en": "Chagwido Sseogeunnyeo", "lat": 33.356, "lng": 126.186, "log_count": 8, "source": "scuby"}, {"name": "섶섬 작은한개창", "name_en": "Seopseom Small Hangaechang", "lat": 33.248, "lng": 126.58, "log_count": 8, "source": "scuby"}, {"name": "문섬 동남", "name_en": "Munseom Southeast", "lat": 33.236000000000004, "lng": 126.57, "log_count": 7, "source": "scuby"}, {"name": "수월봉 연안", "name_en": "Suwolbong Coast", "lat": 33.31, "lng": 126.166, "log_count": 7, "source": "scuby"}, {"name": "섶섬 큰한개창", "name_en": "Seopseom Big Hangaechang", "lat": 33.246, "lng": 126.588, "log_count": 7, "source": "scuby"}, {"name": "범섬 앞 샌드", "name_en": "Beomsem Sand Flat", "lat": 33.248, "lng": 126.508, "log_count": 7, "source": "scuby"}, {"name": "서귀포 내항", "name_en": "Seogwipo Inner Harbor", "lat": 33.26, "lng": 126.552, "log_count": 7, "source": "scuby"}, {"name": "작은항문", "name_en": "Jageun Hangmun", "lat": 33.232, "lng": 126.566, "log_count": 7, "source": "db"}, {"name": "성산일출봉 직벽", "name_en": "Seongsan Ilchulbong Wall", "lat": 33.464, "lng": 126.934, "log_count": 7, "source": "scuby"}, {"name": "표선 가마리 앞바다", "name_en": "Pyoseon Gamari Offshore", "lat": 33.278, "lng": 126.716, "log_count": 7, "source": "scuby"}, {"name": "황우지", "name_en": "Hwanguji", "lat": 33.242, "lng": 126.554, "log_count": 7, "source": "scuby"}, {"name": "성산항 보트 계류장", "name_en": "Seongsan Boat Dock", "lat": 33.462, "lng": 126.914, "log_count": 7, "source": "scuby"}, {"name": "동모", "name_en": "Dongmo", "lat": 33.232, "lng": 126.602, "log_count": 7, "source": "scuby"}, {"name": "범섬 서건도 방향", "name_en": "Beomsem Seogeondo Direction", "lat": 33.236000000000004, "lng": 126.498, "log_count": 6, "source": "scuby"}, {"name": "모슬포 가파도 입구", "name_en": "Mosulpo Gapado Entrance", "lat": 33.212, "lng": 126.254, "log_count": 6, "source": "scuby"}, {"name": "차귀도 고산 앞바다", "name_en": "Chagwido Gosan Offshore", "lat": 33.366, "lng": 126.2, "log_count": 6, "source": "scuby"}, {"name": "범섬 남쪽 벽", "name_en": "Beomsem South Wall", "lat": 33.232, "lng": 126.516, "log_count": 6, "source": "scuby"}, {"name": "섶섬 동코지", "name_en": "Seopseom East Point", "lat": 33.248, "lng": 126.622, "log_count": 6, "source": "scuby"}, {"name": "차귀도 수리코", "name_en": "Chagwido Surico", "lat": 33.358000000000004, "lng": 126.188, "log_count": 6, "source": "scuby"}, {"name": "볼레낭개", "name_en": "Bollenangae", "lat": 33.242, "lng": 126.604, "log_count": 6, "source": "db"}, {"name": "섶섬 작은여", "name_en": "Seopseom Small Rock", "lat": 33.242, "lng": 126.6, "log_count": 6, "source": "scuby"}, {"name": "문섬 북쪽 샌드", "name_en": "Munseom North Sand", "lat": 33.25, "lng": 126.558, "log_count": 6, "source": "scuby"}, {"name": "성산 신양 섭지코지", "name_en": "Seongsan Seobjikhoji", "lat": 33.434, "lng": 126.928, "log_count": 6, "source": "scuby"}, {"name": "서귀포 새섬 직벽", "name_en": "Seogwipo Saeseom Wall", "lat": 33.246, "lng": 126.564, "log_count": 6, "source": "scuby"}, {"name": "문섬 한개창", "name_en": "Munseom Hangaechang", "lat": 33.24, "lng": 126.558, "log_count": 6, "source": "scuby"}, {"name": "가린여 (도두)", "name_en": "Garinnyeo (Dodu)", "lat": 33.508, "lng": 126.47, "log_count": 6, "source": "db"}, {"name": "서건도", "name_en": "Seogeondo", "lat": 33.232, "lng": 126.506, "log_count": 6, "source": "scuby"}, {"name": "형제섬 수중아치", "name_en": "Hyeongjaeseom Arch", "lat": 33.228, "lng": 126.308, "log_count": 6, "source": "scuby"}, {"name": "범섬 콧구멍 동굴", "name_en": "Beomsem Nostril Cave", "lat": 33.24, "lng": 126.516, "log_count": 5, "source": "scuby"}, {"name": "섶섬 동모", "name_en": "Seopseom Dongmo", "lat": 33.244, "lng": 126.596, "log_count": 5, "source": "scuby"}, {"name": "법환 막숙 앞", "name_en": "Beophwan Maksuk Front", "lat": 33.262, "lng": 126.524, "log_count": 5, "source": "scuby"}, {"name": "너알", "name_en": "Neoal", "lat": 33.244, "lng": 126.576, "log_count": 5, "source": "scuby"}, {"name": "서귀포 새섬 직벽", "name_en": "Seogwipo Saeseom Wall", "lat": 33.25, "lng": 126.562, "log_count": 5, "source": "scuby"}, {"name": "서귀포항", "name_en": "Seogwipo Port", "lat": 33.24, "lng": 126.566, "log_count": 5, "source": "db"}, {"name": "보목항 외항", "name_en": "Bomok Harbor Outer", "lat": 33.252, "lng": 126.582, "log_count": 5, "source": "scuby"}, {"name": "섶섬 북쪽 연안", "name_en": "Seopseom North Coast", "lat": 33.25, "lng": 126.62, "log_count": 5, "source": "scuby"}, {"name": "볼레낭개", "name_en": "Bollenangae", "lat": 33.24, "lng": 126.604, "log_count": 5, "source": "db"}, {"name": "보목항 앞바다", "name_en": "Bongmok Harbor Front", "lat": 33.248, "lng": 126.578, "log_count": 5, "source": "scuby"}, {"name": "문섬 불턱 입수처", "name_en": "Munseom Bulteok Entry", "lat": 33.246, "lng": 126.562, "log_count": 5, "source": "scuby"}, {"name": "서귀포 새섬 직벽", "name_en": "Seogwipo Saeseom Wall", "lat": 33.248, "lng": 126.564, "log_count": 5, "source": "scuby"}, {"name": "천국의 계단", "name_en": "Stairway to Heaven", "lat": 33.222, "lng": 126.512, "log_count": 5, "source": "scuby"}, {"name": "서우봉 아치", "name_en": "Seowubong Arch", "lat": 33.552, "lng": 126.652, "log_count": 5, "source": "scuby"}, {"name": "제주항 서방파제", "name_en": "Jeju Port West Breakwater", "lat": 33.51, "lng": 126.478, "log_count": 5, "source": "scuby"}, {"name": "범섬 동쪽 직벽", "name_en": "Beomsem East Wall", "lat": 33.234, "lng": 126.518, "log_count": 5, "source": "scuby"}, {"name": "작은 한개창", "name_en": "Small Hangaechang", "lat": 33.232, "lng": 126.596, "log_count": 5, "source": "scuby"}, {"name": "애월 한담해안", "name_en": "Aewol Handam Coast", "lat": 33.484, "lng": 126.376, "log_count": 5, "source": "scuby"}, {"name": "성산비치", "name_en": "Seongsan Beach", "lat": 33.46, "lng": 126.93, "log_count": 5, "source": "db"}, {"name": "새섬", "name_en": "Saeseom", "lat": 33.236000000000004, "lng": 126.564, "log_count": 5, "source": "db"}, {"name": "동방파제", "name_en": "Dongbangpaje", "lat": 33.236000000000004, "lng": 126.566, "log_count": 5, "source": "db"}, {"name": "강정 해오름노을", "name_en": "Gangjung Sunrise Reef", "lat": 33.234, "lng": 126.462, "log_count": 5, "source": "scuby"}, {"name": "섶섬 너머여", "name_en": "Seopseom Beyond Rock", "lat": 33.236000000000004, "lng": 126.588, "log_count": 5, "source": "scuby"}, {"name": "간줄여", "name_en": "Ganjullyeo", "lat": 33.230000000000004, "lng": 126.596, "log_count": 5, "source": "scuby"}, {"name": "범섬 남단 연산호", "name_en": "Beomsem South Coral", "lat": 33.230000000000004, "lng": 126.516, "log_count": 5, "source": "scuby"}, {"name": "성산 주간명월", "name_en": "Seongsan Juganmyeongwol", "lat": 33.496, "lng": 126.944, "log_count": 5, "source": "scuby"}, {"name": "우도 동안경굴 앞", "name_en": "Udo Dongangyeonggul", "lat": 33.498, "lng": 126.97, "log_count": 4, "source": "scuby"}, {"name": "중문 색달 연안", "name_en": "Jungmun Saekdal Coast", "lat": 33.234, "lng": 126.432, "log_count": 4, "source": "scuby"}, {"name": "동남", "name_en": "Dongnam", "lat": 33.226, "lng": 126.57, "log_count": 4, "source": "scuby"}, {"name": "하효항 인근", "name_en": "Hahyo Harbor", "lat": 33.26, "lng": 126.64, "log_count": 4, "source": "scuby"}, {"name": "범섬 콧구멍 동굴", "name_en": "Beomsem Nostril Cave", "lat": 33.238, "lng": 126.514, "log_count": 4, "source": "scuby"}, {"name": "동모", "name_en": "Dongmo", "lat": 33.232, "lng": 126.604, "log_count": 4, "source": "scuby"}, {"name": "동모", "name_en": "Dongmo", "lat": 33.232, "lng": 126.6, "log_count": 4, "source": "scuby"}, {"name": "범섬 북쪽 보트 대기소", "name_en": "Beomsem North Boat Wait", "lat": 33.246, "lng": 126.526, "log_count": 4, "source": "scuby"}, {"name": "작은항문", "name_en": "Jageun Hangmun", "lat": 33.232, "lng": 126.568, "log_count": 4, "source": "db"}, {"name": "제지기오름 앞", "name_en": "Jejigi Oreum Front", "lat": 33.26, "lng": 126.61, "log_count": 4, "source": "scuby"}, {"name": "사계리 형제섬", "name_en": "Sagye Hyeongjaeseom", "lat": 33.230000000000004, "lng": 126.338, "log_count": 4, "source": "scuby"}, {"name": "범섬 남쪽 벽", "name_en": "Beomsem South Wall", "lat": 33.232, "lng": 126.518, "log_count": 4, "source": "scuby"}, {"name": "강정 해오름노을", "name_en": "Gangjung Sunrise Reef", "lat": 33.234, "lng": 126.464, "log_count": 4, "source": "scuby"}, {"name": "너알", "name_en": "Neoal", "lat": 33.244, "lng": 126.574, "log_count": 4, "source": "scuby"}, {"name": "섶섬 큰한개창", "name_en": "Seopseom Big Hangaechang", "lat": 33.244, "lng": 126.59, "log_count": 4, "source": "scuby"}, {"name": "서건도", "name_en": "Seogeondo", "lat": 33.232, "lng": 126.508, "log_count": 4, "source": "scuby"}, {"name": "서귀항 동방파제", "name_en": "Seogwi East Breakwater", "lat": 33.254, "lng": 126.56, "log_count": 4, "source": "scuby"}, {"name": "알마당", "name_en": "Almadang", "lat": 33.226, "lng": 126.516, "log_count": 4, "source": "scuby"}, {"name": "작은항문", "name_en": "Jageun Hangmun", "lat": 33.230000000000004, "lng": 126.566, "log_count": 4, "source": "db"}, {"name": "섶섬 작은여", "name_en": "Seopseom Small Rock", "lat": 33.242, "lng": 126.598, "log_count": 4, "source": "scuby"}, {"name": "표선 앞바다", "name_en": "Pyoseon Offshore", "lat": 33.312, "lng": 126.71, "log_count": 4, "source": "scuby"}, {"name": "서귀포 새섬 직벽", "name_en": "Seogwipo Saeseom Wall", "lat": 33.248, "lng": 126.562, "log_count": 4, "source": "scuby"}, {"name": "금능/협재 경계", "name_en": "Geumneung Hyeopjae Border", "lat": 33.426, "lng": 126.264, "log_count": 4, "source": "scuby"}, {"name": "신풍리 인공어초", "name_en": "Sinpung Artificial Reef", "lat": 33.33, "lng": 126.736, "log_count": 4, "source": "scuby"}, {"name": "성산 신양 섭지코지", "name_en": "Seongsan Seobjikhoji", "lat": 33.432, "lng": 126.926, "log_count": 4, "source": "scuby"}, {"name": "판포포구 외항", "name_en": "Panpo Harbor Outer", "lat": 33.326, "lng": 126.254, "log_count": 4, "source": "scuby"}, {"name": "서귀포항 서방파제", "name_en": "Seogwipo Port West Breakwater", "lat": 33.248, "lng": 126.568, "log_count": 4, "source": "scuby"}, {"name": "인공어초", "name_en": "Artificial Reef", "lat": 33.236000000000004, "lng": 126.59, "log_count": 4, "source": "scuby"}, {"name": "수월봉 썩은바위", "name_en": "Suwolbong Weathered Rock", "lat": 33.316, "lng": 126.168, "log_count": 4, "source": "scuby"}, {"name": "새섬동산", "name_en": "Saeseom Hill", "lat": 33.236000000000004, "lng": 126.56, "log_count": 4, "source": "scuby"}, {"name": "우도 고래콧구멍", "name_en": "Udo Whale Nostril Cave", "lat": 33.498, "lng": 126.968, "log_count": 4, "source": "scuby"}, {"name": "범섬 굴다리", "name_en": "Beomsem Arch Bridge", "lat": 33.236000000000004, "lng": 126.506, "log_count": 4, "source": "scuby"}, {"name": "제주항 동방파제 끝", "name_en": "Jeju Port East Breakwater End", "lat": 33.518, "lng": 126.488, "log_count": 4, "source": "scuby"}, {"name": "화순 금모래 연안", "name_en": "Hwasun Gold Sand Coast", "lat": 33.294000000000004, "lng": 126.35, "log_count": 4, "source": "scuby"}, {"name": "성산일출봉 앞", "name_en": "Seongsan Ilchulbong Front", "lat": 33.46, "lng": 126.936, "log_count": 4, "source": "scuby"}, {"name": "화순 인공어초", "name_en": "Hwasun Artificial Reef", "lat": 33.236000000000004, "lng": 126.364, "log_count": 4, "source": "scuby"}, {"name": "동모", "name_en": "Dongmo", "lat": 33.234, "lng": 126.604, "log_count": 4, "source": "scuby"}, {"name": "범섬 굴다리", "name_en": "Beomsem Arch Bridge", "lat": 33.234, "lng": 126.506, "log_count": 4, "source": "scuby"}, {"name": "한림 옹포리 연안", "name_en": "Hallim Ongpori Coast", "lat": 33.466, "lng": 126.322, "log_count": 4, "source": "scuby"}, {"name": "도두항 서방파제", "name_en": "Dodu Harbor West Breakwater", "lat": 33.502, "lng": 126.452, "log_count": 3, "source": "scuby"}, {"name": "문섬 북쪽 어초", "name_en": "Munseom North Reef", "lat": 33.25, "lng": 126.572, "log_count": 3, "source": "scuby"}, {"name": "세화/하도 연안", "name_en": "Sehwa Hado Coast", "lat": 33.526, "lng": 126.858, "log_count": 3, "source": "scuby"}, {"name": "중문 성천포구 외곽", "name_en": "Jungmun Seongcheon Outer", "lat": 33.25, "lng": 126.412, "log_count": 3, "source": "scuby"}, {"name": "서귀포항 서방파제", "name_en": "Seogwipo Port West Breakwater", "lat": 33.25, "lng": 126.564, "log_count": 3, "source": "scuby"}, {"name": "탑동 어초", "name_en": "Tapdong Artificial Reef", "lat": 33.512, "lng": 126.484, "log_count": 3, "source": "scuby"}, {"name": "신창 고산어초", "name_en": "Sinchang Gosan Reef", "lat": 33.376, "lng": 126.214, "log_count": 3, "source": "scuby"}, {"name": "보목 제지기 포인트", "name_en": "Bomok Jejigi Point", "lat": 33.26, "lng": 126.618, "log_count": 3, "source": "scuby"}, {"name": "서귀포항 서방파제", "name_en": "Seogwipo West Breakwater", "lat": 33.252, "lng": 126.554, "log_count": 3, "source": "scuby"}, {"name": "한림 옹포리 연안", "name_en": "Hallim Ongpori Coast", "lat": 33.468, "lng": 126.324, "log_count": 3, "source": "scuby"}, {"name": "금능 으뜸원 연안", "name_en": "Geumneung Euteum Coast", "lat": 33.436, "lng": 126.272, "log_count": 3, "source": "scuby"}, {"name": "맨드라미군락지", "name_en": "Cockscomb Coral Colony", "lat": 33.446, "lng": 126.942, "log_count": 3, "source": "db"}, {"name": "성산 일출봉 뒷코지", "name_en": "Seongsan Ilchulbong Back", "lat": 33.45, "lng": 126.92, "log_count": 3, "source": "scuby"}, {"name": "성산항 입구 슬로프", "name_en": "Seongsan Harbor Slope", "lat": 33.454, "lng": 126.916, "log_count": 3, "source": "scuby"}, {"name": "성산비치", "name_en": "Seongsan Beach", "lat": 33.46, "lng": 126.932, "log_count": 3, "source": "db"}, {"name": "한림 옹포리 연안", "name_en": "Hallim Ongpori Coast", "lat": 33.464, "lng": 126.324, "log_count": 3, "source": "scuby"}, {"name": "하효항 외항", "name_en": "Hahyo Harbor Outer", "lat": 33.272, "lng": 126.66, "log_count": 3, "source": "scuby"}, {"name": "보목항 섶섬 가이드라인", "name_en": "Bomok Seopseom Route", "lat": 33.252, "lng": 126.624, "log_count": 3, "source": "scuby"}, {"name": "남원 위미리 연안", "name_en": "Namwon Wimi Coast", "lat": 33.27, "lng": 126.692, "log_count": 3, "source": "scuby"}, {"name": "곽지/한담 산책로 앞", "name_en": "Gwakji Handam Promenade", "lat": 33.478, "lng": 126.356, "log_count": 3, "source": "scuby"}, {"name": "법환 마을 앞", "name_en": "Beophwan Village Front", "lat": 33.262, "lng": 126.506, "log_count": 3, "source": "scuby"}, {"name": "이호테우 외항", "name_en": "Iho Teu Outer Harbor", "lat": 33.494, "lng": 126.474, "log_count": 3, "source": "scuby"}, {"name": "법환 포구 내", "name_en": "Beophwan Port Inner", "lat": 33.256, "lng": 126.504, "log_count": 3, "source": "scuby"}, {"name": "보목 소천지", "name_en": "Bomok Socheonji", "lat": 33.254, "lng": 126.62, "log_count": 3, "source": "scuby"}, {"name": "가파도 북쪽", "name_en": "Gapado North", "lat": 33.2, "lng": 126.276, "log_count": 3, "source": "scuby"}, {"name": "섶섬 작은한개창", "name_en": "Seopseom Small Hangaechang", "lat": 33.246, "lng": 126.58, "log_count": 3, "source": "scuby"}, {"name": "범섬 새끼섬", "name_en": "Beomsem Saekki Islet", "lat": 33.234, "lng": 126.512, "log_count": 3, "source": "scuby"}, {"name": "보목항 앞바다", "name_en": "Bongmok Harbor Front", "lat": 33.246, "lng": 126.578, "log_count": 3, "source": "scuby"}, {"name": "사계항 외곽", "name_en": "Sagye Harbor Outer", "lat": 33.238, "lng": 126.334, "log_count": 3, "source": "scuby"}, {"name": "외돌개", "name_en": "Oedolgae", "lat": 33.246, "lng": 126.544, "log_count": 3, "source": "db"}, {"name": "범섬 새끼섬", "name_en": "Beomsem Saekki Islet", "lat": 33.236000000000004, "lng": 126.51, "log_count": 3, "source": "scuby"}, {"name": "인공어초", "name_en": "Artificial Reef", "lat": 33.234, "lng": 126.59, "log_count": 3, "source": "scuby"}, {"name": "외돌개", "name_en": "Oedolgae", "lat": 33.246, "lng": 126.548, "log_count": 3, "source": "db"}, {"name": "서남", "name_en": "Seonam", "lat": 33.236000000000004, "lng": 126.62, "log_count": 3, "source": "db"}, {"name": "볼레낭개", "name_en": "Bollenangae", "lat": 33.242, "lng": 126.606, "log_count": 3, "source": "db"}, {"name": "인공어초", "name_en": "Artificial Reef", "lat": 33.238, "lng": 126.592, "log_count": 3, "source": "scuby"}, {"name": "범섬 북단", "name_en": "Beomsem North End", "lat": 33.242, "lng": 126.506, "log_count": 3, "source": "scuby"}, {"name": "문섬 동산 위", "name_en": "Munseom Sand Hill", "lat": 33.246, "lng": 126.568, "log_count": 3, "source": "scuby"}, {"name": "문섬 동남", "name_en": "Munseom Southeast", "lat": 33.236000000000004, "lng": 126.568, "log_count": 3, "source": "scuby"}, {"name": "범섬 서쪽 벽", "name_en": "Beomsem West Wall", "lat": 33.236000000000004, "lng": 126.5, "log_count": 3, "source": "scuby"}, {"name": "강정 동방파제 외항", "name_en": "Gangjung East Breakwater", "lat": 33.226, "lng": 126.478, "log_count": 3, "source": "scuby"}, {"name": "중문 성천포구 앞", "name_en": "Jungmun Seongcheon Front", "lat": 33.242, "lng": 126.42, "log_count": 3, "source": "scuby"}, {"name": "강정 동쪽 연안", "name_en": "Gangjung East Coast", "lat": 33.244, "lng": 126.532, "log_count": 3, "source": "scuby"}, {"name": "큰 한개창", "name_en": "Big Hangaechang", "lat": 33.236000000000004, "lng": 126.598, "log_count": 3, "source": "scuby"}, {"name": "섶섬 너머여", "name_en": "Seopseom Beyond Rock", "lat": 33.238, "lng": 126.59, "log_count": 3, "source": "scuby"}, {"name": "범섬 앞 샌드", "name_en": "Beomsem Sand Flat", "lat": 33.248, "lng": 126.506, "log_count": 3, "source": "scuby"}, {"name": "범섬 남단 딥", "name_en": "Beomsem South Deep", "lat": 33.22, "lng": 126.502, "log_count": 3, "source": "scuby"}, {"name": "범섬 새끼섬", "name_en": "Beomsem Saekki Islet", "lat": 33.238, "lng": 126.512, "log_count": 3, "source": "scuby"}, {"name": "대포항 외항", "name_en": "Daepo Harbor Outer", "lat": 33.236000000000004, "lng": 126.434, "log_count": 3, "source": "scuby"}, {"name": "범섬 북쪽 보트 정박지", "name_en": "Beomsem North Boat Anchor", "lat": 33.248, "lng": 126.528, "log_count": 3, "source": "scuby"}, {"name": "범섬 콧구멍 동굴", "name_en": "Beomsem Nostril Cave", "lat": 33.238, "lng": 126.518, "log_count": 3, "source": "scuby"}, {"name": "범섬 새끼섬 뒷편", "name_en": "Beomsem Saekki Behind", "lat": 33.244, "lng": 126.516, "log_count": 3, "source": "scuby"}, {"name": "모슬포 운진항 인근", "name_en": "Mosulpo Unjin Harbor", "lat": 33.21, "lng": 126.258, "log_count": 3, "source": "scuby"}, {"name": "문섬 불턱", "name_en": "Munseom Bulteok Upper", "lat": 33.248, "lng": 126.552, "log_count": 3, "source": "scuby"}, {"name": "소천지", "name_en": "Socheonji", "lat": 33.24, "lng": 126.6, "log_count": 3, "source": "scuby"}, {"name": "범섬 굴다리", "name_en": "Beomsem Arch Bridge", "lat": 33.236000000000004, "lng": 126.504, "log_count": 2, "source": "scuby"}, {"name": "성산항 외방파제 끝", "name_en": "Seongsan Outer Breakwater End", "lat": 33.452, "lng": 126.926, "log_count": 2, "source": "scuby"}, {"name": "성산항 외방파제 끝", "name_en": "Seongsan Outer Breakwater End", "lat": 33.454, "lng": 126.924, "log_count": 2, "source": "scuby"}, {"name": "왓지리여", "name_en": "Watjiribyeo", "lat": 33.454, "lng": 126.944, "log_count": 2, "source": "db"}, {"name": "강정 해오름노을", "name_en": "Gangjung Sunrise Reef", "lat": 33.236000000000004, "lng": 126.462, "log_count": 2, "source": "scuby"}, {"name": "새섬", "name_en": "Saeseom", "lat": 33.236000000000004, "lng": 126.562, "log_count": 2, "source": "db"}, {"name": "협재 한수리 연안", "name_en": "Hyeopjae Hansuri Coast", "lat": 33.408, "lng": 126.264, "log_count": 2, "source": "scuby"}, {"name": "인공어초", "name_en": "Artificial Reef", "lat": 33.236000000000004, "lng": 126.592, "log_count": 2, "source": "scuby"}, {"name": "사계항 외곽", "name_en": "Sagye Harbor Outer", "lat": 33.238, "lng": 126.332, "log_count": 2, "source": "scuby"}, {"name": "금능 해안 암초", "name_en": "Geumneung Coast Rock", "lat": 33.418, "lng": 126.298, "log_count": 2, "source": "scuby"}, {"name": "화순 인공어초", "name_en": "Hwasun Artificial Reef", "lat": 33.238, "lng": 126.362, "log_count": 2, "source": "scuby"}, {"name": "옹포리 앞바다", "name_en": "Ongpori Offshore", "lat": 33.406, "lng": 126.254, "log_count": 2, "source": "scuby"}, {"name": "비양도 남쪽 끝", "name_en": "Biyangdo South End", "lat": 33.4, "lng": 126.214, "log_count": 2, "source": "scuby"}, {"name": "난파선 (비양도)", "name_en": "Wreck (Biyangdo)", "lat": 33.396, "lng": 126.244, "log_count": 2, "source": "db"}, {"name": "화순 인공어초", "name_en": "Hwasun Artificial Reef", "lat": 33.238, "lng": 126.364, "log_count": 2, "source": "scuby"}, {"name": "돌하르방어초", "name_en": "Dol Hareubang Artificial Reef", "lat": 33.39, "lng": 126.232, "log_count": 2, "source": "db"}, {"name": "협재 비양도 분홍동산", "name_en": "Hyeopjae Biyangdo Pink Garden", "lat": 33.39, "lng": 126.228, "log_count": 2, "source": "scuby"}, {"name": "남원 신흥리 연안", "name_en": "Namwon Sinheung Coast", "lat": 33.378, "lng": 126.626, "log_count": 2, "source": "scuby"}, {"name": "산해봉 동굴", "name_en": "Sanhaebong Cave", "lat": 33.238, "lng": 126.538, "log_count": 2, "source": "scuby"}, {"name": "인공어초", "name_en": "Artificial Reef", "lat": 33.234, "lng": 126.592, "log_count": 2, "source": "scuby"}, {"name": "문섬 북쪽 샌드", "name_en": "Munseom North Sand", "lat": 33.248, "lng": 126.558, "log_count": 2, "source": "scuby"}, {"name": "섶섬 남서쪽 샌드", "name_en": "Seopseom Southwest Sand", "lat": 33.234, "lng": 126.586, "log_count": 2, "source": "scuby"}, {"name": "한림항 서방파제", "name_en": "Hallim West Breakwater", "lat": 33.464, "lng": 126.316, "log_count": 2, "source": "scuby"}, {"name": "난파선1", "name_en": "Shipwreck 1", "lat": 33.230000000000004, "lng": 126.564, "log_count": 2, "source": "scuby"}, {"name": "부이6", "name_en": "Buoy 6", "lat": 33.228, "lng": 126.562, "log_count": 2, "source": "db"}, {"name": "범섬 남단 연산호", "name_en": "Beomsem South Coral", "lat": 33.228, "lng": 126.516, "log_count": 2, "source": "scuby"}, {"name": "도두항 서방파제", "name_en": "Dodu Harbor West Breakwater", "lat": 33.502, "lng": 126.456, "log_count": 2, "source": "scuby"}, {"name": "서건도", "name_en": "Seogeondo", "lat": 33.228, "lng": 126.498, "log_count": 2, "source": "db"}, {"name": "동모", "name_en": "Dongmo", "lat": 33.226, "lng": 126.568, "log_count": 2, "source": "db"}, {"name": "새끼섬 직벽 (문섬)", "name_en": "Saekkiseom Wall (Munseom)", "lat": 33.226, "lng": 126.54, "log_count": 2, "source": "db"}, {"name": "알마당", "name_en": "Almadang", "lat": 33.226, "lng": 126.514, "log_count": 2, "source": "scuby"}, {"name": "새끼섬", "name_en": "Saekki Islet (Beomsem)", "lat": 33.224000000000004, "lng": 126.518, "log_count": 2, "source": "scuby"}, {"name": "천국의 계단", "name_en": "Stairway to Heaven", "lat": 33.224000000000004, "lng": 126.514, "log_count": 2, "source": "scuby"}, {"name": "제주항 방파제 외항", "name_en": "Jeju Harbor Outer", "lat": 33.52, "lng": 126.492, "log_count": 2, "source": "scuby"}, {"name": "하도리 토끼섬 인근", "name_en": "Hado Tokki Island", "lat": 33.53, "lng": 126.858, "log_count": 2, "source": "scuby"}, {"name": "함덕 서우봉 동편", "name_en": "Hamdeok Seowubong East", "lat": 33.544000000000004, "lng": 126.674, "log_count": 2, "source": "scuby"}, {"name": "함덕 아치", "name_en": "Hamdeok Arch Main", "lat": 33.548, "lng": 126.656, "log_count": 2, "source": "scuby"}, {"name": "함덕 터널 포인트", "name_en": "Hamdeok Tunnel Point", "lat": 33.548, "lng": 126.658, "log_count": 2, "source": "scuby"}, {"name": "서건도", "name_en": "Seogeondo", "lat": 33.232, "lng": 126.498, "log_count": 2, "source": "db"}, {"name": "서건도", "name_en": "Seogeondo", "lat": 33.232, "lng": 126.512, "log_count": 2, "source": "scuby"}, {"name": "우도 남단 코지", "name_en": "Udo South End", "lat": 33.49, "lng": 126.962, "log_count": 2, "source": "scuby"}, {"name": "성산일출봉 앞바다", "name_en": "Seongsan Ilchulbong Offshore", "lat": 33.468, "lng": 126.922, "log_count": 2, "source": "scuby"}, {"name": "문섬 동남", "name_en": "Munseom Southeast", "lat": 33.234, "lng": 126.568, "log_count": 2, "source": "scuby"}, {"name": "애월 하귀 포인트", "name_en": "Aewol Hagwi Point", "lat": 33.364, "lng": 126.466, "log_count": 2, "source": "scuby"}, {"name": "법환~강정 이동경로", "name_en": "Beophwan Gangjung Route", "lat": 33.234, "lng": 126.49, "log_count": 2, "source": "scuby"}, {"name": "한림 옹포리 연안", "name_en": "Hallim Ongpori Coast", "lat": 33.466, "lng": 126.324, "log_count": 2, "source": "scuby"}, {"name": "월평 포구 앞", "name_en": "Wolpyeong Harbor Front", "lat": 33.234, "lng": 126.484, "log_count": 2, "source": "scuby"}, {"name": "한림항 출입항로", "name_en": "Hallim Harbor Route", "lat": 33.468, "lng": 126.338, "log_count": 2, "source": "scuby"}, {"name": "성산일출봉 뒷코지", "name_en": "Seongsan Ilchulbong East Cliff", "lat": 33.468, "lng": 126.928, "log_count": 2, "source": "scuby"}, {"name": "외도 연대포구 앞", "name_en": "Oedo Yeondae Harbor", "lat": 33.49, "lng": 126.41, "log_count": 2, "source": "scuby"}, {"name": "애월 귀덕궤물동산", "name_en": "Aewol Gwideok Cave Hill", "lat": 33.472, "lng": 126.328, "log_count": 2, "source": "scuby"}, {"name": "내도 알작지 외항", "name_en": "Naedo Aljagji Outer", "lat": 33.472, "lng": 126.412, "log_count": 2, "source": "scuby"}, {"name": "화순 인공어초", "name_en": "Hwasun Artificial Reef", "lat": 33.234, "lng": 126.362, "log_count": 2, "source": "scuby"}, {"name": "이호 해수욕장 외곽", "name_en": "Iho Beach Outer", "lat": 33.478, "lng": 126.452, "log_count": 2, "source": "scuby"}, {"name": "외도~하귀 이동경로", "name_en": "Oedo Hagwi Route", "lat": 33.482, "lng": 126.402, "log_count": 2, "source": "scuby"}, {"name": "새끼섬 직벽", "name_en": "Saekki Island Wall", "lat": 33.232, "lng": 126.57, "log_count": 2, "source": "scuby"}, {"name": "문섬 한개창", "name_en": "Munseom Hangaechang", "lat": 33.238, "lng": 126.558, "log_count": 2, "source": "scuby"}, {"name": "차귀도 앞바다 샌드", "name_en": "Chagwido Sand Flat", "lat": 33.35, "lng": 126.188, "log_count": 2, "source": "scuby"}, {"name": "차귀도 지실이 서단", "name_en": "Chagwido Jisili West", "lat": 33.36, "lng": 126.18, "log_count": 2, "source": "scuby"}, {"name": "범섬 앞 샌드", "name_en": "Beomsem Sand Flat", "lat": 33.246, "lng": 126.506, "log_count": 2, "source": "scuby"}, {"name": "범섬 북쪽 보트 대기소", "name_en": "Beomsem North Boat Wait", "lat": 33.246, "lng": 126.524, "log_count": 2, "source": "scuby"}, {"name": "화순항 동방파제 앞", "name_en": "Hwasun East Breakwater Front", "lat": 33.254, "lng": 126.356, "log_count": 2, "source": "scuby"}, {"name": "강정천 하류 믹스존", "name_en": "Gangjung River Mix Zone", "lat": 33.254, "lng": 126.44, "log_count": 2, "source": "scuby"}, {"name": "법환항 입구", "name_en": "Beophwan Harbor Entrance", "lat": 33.254, "lng": 126.508, "log_count": 2, "source": "scuby"}, {"name": "법환항 입구", "name_en": "Beophwan Harbor Entrance", "lat": 33.254, "lng": 126.512, "log_count": 2, "source": "scuby"}, {"name": "천지연 하류 수중", "name_en": "Cheonjiyeon River Mouth", "lat": 33.254, "lng": 126.546, "log_count": 2, "source": "scuby"}, {"name": "보목항 외항", "name_en": "Bomok Harbor Outer", "lat": 33.254, "lng": 126.58, "log_count": 2, "source": "scuby"}, {"name": "외돌개", "name_en": "Oedolgae", "lat": 33.246, "lng": 126.546, "log_count": 2, "source": "db"}, {"name": "섶섬 동모", "name_en": "Seopseom Dongmo", "lat": 33.244, "lng": 126.598, "log_count": 2, "source": "scuby"}, {"name": "너알", "name_en": "Neoal", "lat": 33.244, "lng": 126.578, "log_count": 2, "source": "scuby"}, {"name": "신창 풍차해안 앞", "name_en": "Sinchang Windmill Coast Front", "lat": 33.26, "lng": 126.184, "log_count": 2, "source": "scuby"}, {"name": "법환 막숙 동편", "name_en": "Beophwan Maksuk East", "lat": 33.26, "lng": 126.522, "log_count": 2, "source": "scuby"}, {"name": "법환 막숙 동편", "name_en": "Beophwan Maksuk East", "lat": 33.26, "lng": 126.524, "log_count": 2, "source": "scuby"}, {"name": "문섬 한개창 상단", "name_en": "Munseom Hangaechang Top", "lat": 33.244, "lng": 126.572, "log_count": 2, "source": "scuby"}, {"name": "문섬 새끼섬 입구", "name_en": "Munseom Saekki Entrance", "lat": 33.252, "lng": 126.576, "log_count": 2, "source": "scuby"}, {"name": "법환항 입구", "name_en": "Beophwan Harbor Entrance", "lat": 33.252, "lng": 126.508, "log_count": 2, "source": "scuby"}, {"name": "차귀도 수리코 동편", "name_en": "Chagwido Surico East", "lat": 33.358000000000004, "lng": 126.196, "log_count": 2, "source": "scuby"}, {"name": "강정 큰개 앞", "name_en": "Gangjung Big Rock Front", "lat": 33.25, "lng": 126.46, "log_count": 2, "source": "scuby"}, {"name": "서귀포 새섬 직벽", "name_en": "Seogwipo Saeseom Wall", "lat": 33.248, "lng": 126.566, "log_count": 2, "source": "scuby"}, {"name": "범섬 북쪽 보트 정박지", "name_en": "Beomsem North Boat Anchor", "lat": 33.248, "lng": 126.53, "log_count": 2, "source": "scuby"}, {"name": "문섬 북쪽 어초", "name_en": "Munseom North Reef", "lat": 33.248, "lng": 126.574, "log_count": 2, "source": "scuby"}, {"name": "범섬 북쪽 보트 대기소", "name_en": "Beomsem North Boat Wait", "lat": 33.248, "lng": 126.526, "log_count": 2, "source": "scuby"}, {"name": "섶섬 작은한개창", "name_en": "Seopseom Small Hangaechang", "lat": 33.248, "lng": 126.582, "log_count": 2, "source": "scuby"}, {"name": "제주 섶섬", "name_en": "Seopseom Island", "lat": 33.248, "lng": 126.516, "log_count": 2, "source": "db"}, {"name": "강정 큰개 앞", "name_en": "Gangjung Big Rock Front", "lat": 33.25, "lng": 126.462, "log_count": 2, "source": "scuby"}, {"name": "강정 내항 교육장", "name_en": "Gangjung Inner Harbor Training", "lat": 33.252, "lng": 126.46, "log_count": 2, "source": "scuby"}, {"name": "섶섬 큰한개창", "name_en": "Seopseom Big Hangaechang", "lat": 33.246, "lng": 126.586, "log_count": 2, "source": "scuby"}, {"name": "가파도/마라도 통로", "name_en": "Gapado Marado Channel", "lat": 33.206, "lng": 126.29, "log_count": 2, "source": "scuby"}, {"name": "보목항 앞바다", "name_en": "Bongmok Harbor Front", "lat": 33.246, "lng": 126.576, "log_count": 2, "source": "scuby"}, {"name": "문섬 동산 위", "name_en": "Munseom Sand Hill", "lat": 33.246, "lng": 126.57, "log_count": 2, "source": "scuby"}, {"name": "문섬 불턱 입수처", "name_en": "Munseom Bulteok Entry", "lat": 33.246, "lng": 126.56, "log_count": 2, "source": "scuby"}, {"name": "중문 요트 계류장 앞", "name_en": "Jungmun Yacht Marina Front", "lat": 33.252, "lng": 126.424, "log_count": 2, "source": "scuby"}, {"name": "문섬 한개창 상단", "name_en": "Munseom Hangaechang Top", "lat": 33.244, "lng": 126.57, "log_count": 2, "source": "scuby"}, {"name": "서귀포 밸리", "name_en": "Seogwipo Valley", "lat": 33.244, "lng": 126.538, "log_count": 2, "source": "scuby"}, {"name": "보목 제지기 포인트", "name_en": "Bomok Jejigi Point", "lat": 33.26, "lng": 126.62, "log_count": 2, "source": "scuby"}, {"name": "차귀도 지실이", "name_en": "Chagwido Jisili", "lat": 33.346000000000004, "lng": 126.182, "log_count": 2, "source": "scuby"}, {"name": "제지기", "name_en": "Jejigi", "lat": 33.24, "lng": 126.61, "log_count": 2, "source": "db"}, {"name": "섶섬 작은여", "name_en": "Seopseom Small Rock", "lat": 33.24, "lng": 126.598, "log_count": 2, "source": "scuby"}, {"name": "범섬 북단", "name_en": "Beomsem North End", "lat": 33.24, "lng": 126.508, "log_count": 2, "source": "scuby"}, {"name": "인공어초", "name_en": "Artificial Reef", "lat": 33.238, "lng": 126.594, "log_count": 2, "source": "scuby"}, {"name": "표선/하천리 어초", "name_en": "Pyoseon Hacheon Reef", "lat": 33.338, "lng": 126.852, "log_count": 2, "source": "scuby"}, {"name": "차귀도 지실이", "name_en": "Chagwido Jisili", "lat": 33.346000000000004, "lng": 126.178, "log_count": 2, "source": "scuby"}, {"name": "차귀도 죽도 남단", "name_en": "Chagwido Jukdo South", "lat": 33.348, "lng": 126.178, "log_count": 2, "source": "scuby"}, {"name": "강정동 대형어초", "name_en": "Gangjung Large Reef", "lat": 33.262, "lng": 126.47, "log_count": 2, "source": "scuby"}, {"name": "차귀도 죽도 남단", "name_en": "Chagwido Jukdo South", "lat": 33.35, "lng": 126.18, "log_count": 2, "source": "scuby"}, {"name": "문섬 북쪽 샌드", "name_en": "Munseom North Sand", "lat": 33.248, "lng": 126.556, "log_count": 2, "source": "scuby"}, {"name": "신천리 앞바다", "name_en": "Sincheon Offshore", "lat": 33.352000000000004, "lng": 126.814, "log_count": 2, "source": "scuby"}, {"name": "차귀도 썩은여", "name_en": "Chagwido Sseogeunnyeo", "lat": 33.356, "lng": 126.188, "log_count": 2, "source": "scuby"}, {"name": "섶섬 너머여", "name_en": "Seopseom Beyond Rock", "lat": 33.238, "lng": 126.588, "log_count": 2, "source": "scuby"}, {"name": "새섬동산", "name_en": "Saeseom Hill", "lat": 33.238, "lng": 126.56, "log_count": 2, "source": "scuby"}, {"name": "화순항 동방파제", "name_en": "Hwasun East Breakwater", "lat": 33.304, "lng": 126.344, "log_count": 2, "source": "scuby"}, {"name": "남원 태흥리 연안", "name_en": "Namwon Taeheung Coast", "lat": 33.28, "lng": 126.682, "log_count": 2, "source": "scuby"}, {"name": "표선 가마리 앞바다", "name_en": "Pyoseon Gamari Offshore", "lat": 33.278, "lng": 126.718, "log_count": 2, "source": "scuby"}, {"name": "범섬 북단", "name_en": "Beomsem North End", "lat": 33.242, "lng": 126.51, "log_count": 2, "source": "scuby"}, {"name": "표선 가마리 앞바다", "name_en": "Pyoseon Gamari Offshore", "lat": 33.278, "lng": 126.712, "log_count": 2, "source": "scuby"}, {"name": "남원 망장포 앞", "name_en": "Namwon Mangjeangpo Front", "lat": 33.276, "lng": 126.666, "log_count": 2, "source": "scuby"}, {"name": "예르메스", "name_en": "Yermes", "lat": 33.242, "lng": 126.57, "log_count": 2, "source": "scuby"}, {"name": "공천포 연안", "name_en": "Gongcheonpo Coast", "lat": 33.272, "lng": 126.646, "log_count": 2, "source": "scuby"}, {"name": "토평동 연안", "name_en": "Topyeong Coast", "lat": 33.27, "lng": 126.588, "log_count": 2, "source": "scuby"}, {"name": "보목항 샌드 가든", "name_en": "Bomok Sand Garden", "lat": 33.264, "lng": 126.614, "log_count": 2, "source": "scuby"}, {"name": "보목항 샌드 가든", "name_en": "Bomok Sand Garden", "lat": 33.264, "lng": 126.612, "log_count": 2, "source": "scuby"}, {"name": "보목항 샌드 가든", "name_en": "Bomok Sand Garden", "lat": 33.264, "lng": 126.61, "log_count": 2, "source": "scuby"}, {"name": "법환 마을 앞", "name_en": "Beophwan Village Front", "lat": 33.264, "lng": 126.508, "log_count": 2, "source": "scuby"}, {"name": "강정천 하류 수중", "name_en": "Gangjung River Mouth", "lat": 33.264, "lng": 126.466, "log_count": 2, "source": "scuby"}, {"name": "법환 막숙 앞", "name_en": "Beophwan Maksuk Front", "lat": 33.262, "lng": 126.526, "log_count": 2, "source": "scuby"}, {"name": "섶섬 동코지 끝", "name_en": "Seopseom East Point Deep", "lat": 33.242, "lng": 126.624, "log_count": 2, "source": "scuby"}, {"name": "법환 마을 앞", "name_en": "Beophwan Village Front", "lat": 33.262, "lng": 126.504, "log_count": 2, "source": "scuby"}, {"name": "월정 피라미드 어초", "name_en": "Woljeong Pyramid Reef", "lat": 33.56, "lng": 126.81, "log_count": 2, "source": "scuby"}];
-const markers = [];
+      const light = L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+        { attribution: "© CARTO | DIVEROID" },
+      );
+      const satellite = L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        { attribution: "© Esri | DIVEROID", maxZoom: 19 },
+      );
 
-pts.forEach(p => {
-  const r = p.log_count > 0 ? Math.min(5 + Math.log(p.log_count+1)*2.5, 20) : 6;
-  const color = p.source === 'db' ? '#50A9FC' : '#27ae60';
-  const m = L.circleMarker([p.lat, p.lng], {
-    radius:r, fillColor:color, color:'#fff', weight:1.5, fillOpacity:0.85
-  }).bindPopup(`
-    <div style="min-width:140px">
+      let current = light.addTo(map);
+      function toggleTile() {
+        map.removeLayer(current);
+        current = current === light ? satellite : light;
+        current.addTo(map);
+        document.getElementById("tile-toggle").textContent =
+          current === light ? "🛰️ Satellite" : "🗺️ Light";
+      }
+
+      const pts = [
+        { name: "동남", name_en: "Dongnam", lat: 33.22543, lng: 126.568872 },
+        {
+          name: "새끼섬",
+          name_en: "Saekkiseom",
+          lat: 33.227658,
+          lng: 126.568766,
+        },
+        {
+          name: "만남의 광장",
+          name_en: "Mannam Square",
+          lat: 33.228515,
+          lng: 126.567029,
+        },
+        {
+          name: "침선1,침선2",
+          name_en: "Wreck 1, Wreck 2",
+          lat: 33.228074,
+          lng: 126.565063,
+        },
+        {
+          name: "한개창",
+          name_en: "Hangaechang",
+          lat: 33.227996,
+          lng: 126.56305,
+        },
+        { name: "서남", name_en: "Seonam", lat: 33.227075, lng: 126.561847 },
+        {
+          name: "외돌개",
+          name_en: "Oedolgae",
+          lat: 33.231542,
+          lng: 126.562615,
+        },
+        {
+          name: "동방파제",
+          name_en: "East Breakwater",
+          lat: 33.232696,
+          lng: 126.567969,
+        },
+        {
+          name: "칼동굴",
+          name_en: "Kal Cave",
+          lat: 33.231319,
+          lng: 126.569862,
+        },
+      ];
+
+      const markers = [];
+      pts.forEach((p) => {
+        const m = L.circleMarker([p.lat, p.lng], {
+          radius: 9,
+          fillColor: "#50A9FC",
+          color: "#fff",
+          weight: 2,
+          fillOpacity: 0.9,
+        })
+          .bindPopup(
+            `
+    <div style="min-width:160px">
       <b style="font-size:14px">${p.name}</b><br>
       <span style="color:#888;font-size:12px">${p.name_en}</span><br>
-      ${p.log_count > 0 ? `<br>📊 <b>${p.log_count}</b> dive logs` : ''}
+      <div style="margin-top:6px;font-size:11px;color:#666">
+        📍 ${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}
+      </div>
     </div>
-  `).addTo(map);
-  markers.push({m, p});
-});
+  `,
+          )
+          .addTo(map);
+        markers.push({ m, p });
+      });
 
-function searchPt(q) {
-  if (!q) { markers.forEach(x => x.m.addTo(map)); return; }
-  q = q.toLowerCase();
-  markers.forEach(x => {
-    if (x.p.name.toLowerCase().includes(q) || (x.p.name_en||'').toLowerCase().includes(q)) {
-      x.m.addTo(map);
-    } else {
-      map.removeLayer(x.m);
-    }
-  });
-}
+      function searchPt(q) {
+        if (!q) {
+          markers.forEach((x) => x.m.addTo(map));
+          return;
+        }
+        q = q.toLowerCase();
+        markers.forEach((x) => {
+          if (
+            x.p.name.toLowerCase().includes(q) ||
+            (x.p.name_en || "").toLowerCase().includes(q)
+          ) {
+            x.m.addTo(map);
+          } else {
+            map.removeLayer(x.m);
+          }
+        });
+      }
 
-function downloadCSV() {
-  const rows = ['\uFEFFname,name_en,lat,lng,log_count'];
-  pts.forEach(p => rows.push(`${p.name},${p.name_en},${p.lat},${p.lng},${p.log_count}`));
-  const blob = new Blob([rows.join('\n')], {type:'text/csv;charset=utf-8;'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'diveroid_jeju_points.csv';
-  a.click();
-}
-</script>
-</body></html>
+      function downloadCSV() {
+        const rows = ["﻿name,name_en,lat,lng"];
+        pts.forEach((p) =>
+          rows.push(`${p.name},${p.name_en},${p.lat},${p.lng}`),
+        );
+        const blob = new Blob([rows.join("\n")], {
+          type: "text/csv;charset=utf-8;",
+        });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "jeju_munseom_points.csv";
+        a.click();
+      }
+    </script>
+  </body>
+</html>
