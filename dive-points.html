@@ -162,6 +162,9 @@
       <div class="legend">
         <span class="dot"></span>Dive Point (Overlay-derived)
       </div>
+      <div class="legend">
+        <span class="dot" style="background: #27ae60"></span>DIVEROID Log GPS
+      </div>
       <hr />
       <div style="font-size: 11px; color: #999; margin-bottom: 4px">
         좌표 출처: 다이빙 리조트 지도 ↔ 구글맵 4점 정렬
@@ -263,10 +266,10 @@
       const markers = [];
       pts.forEach((p) => {
         const m = L.circleMarker([p.lat, p.lng], {
-          radius: 9,
+          radius: 0.3,
           fillColor: "#50A9FC",
-          color: "#fff",
-          weight: 2,
+          color: "#50A9FC",
+          weight: 0.5,
           fillOpacity: 0.9,
         })
           .bindPopup(
@@ -301,6 +304,25 @@
           }
         });
       }
+
+      // ── DIVEROID 실제 로그 GPS 점들 (초록색) ──
+      const logsLayer = L.layerGroup().addTo(map);
+      const canvasRenderer = L.canvas({ padding: 0.5 });
+      fetch("munseom-logs.json")
+        .then((r) => r.json())
+        .then((logs) => {
+          logs.forEach(([lat, lng]) => {
+            L.circleMarker([lat, lng], {
+              renderer: canvasRenderer,
+              radius: 3,
+              fillColor: "#27ae60",
+              color: "#27ae60",
+              weight: 0,
+              fillOpacity: 0.55,
+            }).addTo(logsLayer);
+          });
+        })
+        .catch((e) => console.warn("logs load failed", e));
 
       const h3Layer = L.layerGroup().addTo(map);
       function setH3(res) {
