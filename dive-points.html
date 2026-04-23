@@ -168,6 +168,10 @@
       <div class="legend">
         <span class="dot" style="background: #9b59b6"></span>PADI Official Sites
       </div>
+      <div class="legend">
+        <span class="dot" style="background: #f1c40f"></span>Cool Dive Resort
+        (16)
+      </div>
       <hr />
       <div style="font-size: 11px; color: #999; margin-bottom: 4px">
         좌표 출처: 다이빙 리조트 지도 ↔ 구글맵 4점 정렬
@@ -308,7 +312,34 @@
         });
       }
 
-      // ── PADI 공식 제주 Dive Sites (보라색, 별 모양) ──
+      // ── Cool Dive Resort (서귀포 16개, 노란색) ──
+      const coolLayer = L.layerGroup().addTo(map);
+      fetch("cooldive-points.json")
+        .then((r) => r.json())
+        .then((sites) => {
+          sites.forEach((s) => {
+            const m = L.circleMarker([s.lat, s.lng], {
+              radius: 7,
+              fillColor: "#f1c40f",
+              color: "#b7950b",
+              weight: 1.5,
+              fillOpacity: 0.9,
+            });
+            m.bindPopup(
+              `<div style="min-width:160px">
+                <b style="font-size:14px">${s.name}</b>
+                <div style="color:#b7950b;font-size:11px;font-weight:600;margin-top:2px">Cool Dive Resort</div>
+                <div style="margin-top:6px;font-size:11px;color:#666">
+                  📍 ${s.lat.toFixed(6)}, ${s.lng.toFixed(6)}
+                </div>
+               </div>`,
+            );
+            m.addTo(coolLayer);
+          });
+        })
+        .catch((e) => console.warn("cooldive load failed", e));
+
+      // ── PADI 공식 제주 Dive Sites (보라색) ──
       const padiLayer = L.layerGroup().addTo(map);
       fetch("padi-jeju.json")
         .then((r) => r.json())
@@ -316,11 +347,11 @@
           sites.forEach((s) => {
             if (!s.latitude || !s.longitude) return;
             const m = L.circleMarker([s.latitude, s.longitude], {
-              radius: 10,
+              radius: 4,
               fillColor: "#9b59b6",
-              color: "#fff",
-              weight: 2,
-              fillOpacity: 0.9,
+              color: "#9b59b6",
+              weight: 1,
+              fillOpacity: 0.85,
             });
             const types = (s.types || "").replace(/"/g, "");
             m.bindPopup(
