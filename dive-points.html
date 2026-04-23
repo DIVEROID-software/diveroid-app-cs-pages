@@ -159,9 +159,7 @@
         <span>Total Points</span><span class="badge" id="total">9</span>
       </div>
       <hr />
-      <div class="legend">
-        <span class="dot"></span>Dive Point (Overlay-derived)
-      </div>
+      <div class="legend"><span class="dot"></span>DIVEROID Overlay (29)</div>
       <div class="legend">
         <span class="dot" style="background: #27ae60"></span>DIVEROID Log GPS
       </div>
@@ -226,76 +224,37 @@
           current === light ? "🛰️ Satellite" : "🗺️ Light";
       }
 
-      const pts = [
-        { name: "동남", name_en: "Dongnam", lat: 33.22543, lng: 126.568872 },
-        {
-          name: "새끼섬",
-          name_en: "Saekkiseom",
-          lat: 33.227658,
-          lng: 126.568766,
-        },
-        {
-          name: "만남의 광장",
-          name_en: "Mannam Square",
-          lat: 33.228515,
-          lng: 126.567029,
-        },
-        {
-          name: "침선1,침선2",
-          name_en: "Wreck 1, Wreck 2",
-          lat: 33.228074,
-          lng: 126.565063,
-        },
-        {
-          name: "한개창",
-          name_en: "Hangaechang",
-          lat: 33.227996,
-          lng: 126.56305,
-        },
-        { name: "서남", name_en: "Seonam", lat: 33.227075, lng: 126.561847 },
-        {
-          name: "외돌개",
-          name_en: "Oedolgae",
-          lat: 33.231542,
-          lng: 126.562615,
-        },
-        {
-          name: "동방파제",
-          name_en: "East Breakwater",
-          lat: 33.232696,
-          lng: 126.567969,
-        },
-        {
-          name: "칼동굴",
-          name_en: "Kal Cave",
-          lat: 33.231319,
-          lng: 126.569862,
-        },
-      ];
-
+      // ── DIVEROID Overlay (POC + BUBBLE TANK 통합, 파란색) ──
+      let pts = [];
       const markers = [];
-      pts.forEach((p) => {
-        const m = L.circleMarker([p.lat, p.lng], {
-          radius: 0.3,
-          fillColor: "#50A9FC",
-          color: "#50A9FC",
-          weight: 0.5,
-          fillOpacity: 0.9,
+      fetch("overlay-points.json")
+        .then((r) => r.json())
+        .then((data) => {
+          pts = data;
+          document.getElementById("total").textContent = data.length;
+          data.forEach((p) => {
+            const m = L.circleMarker([p.lat, p.lng], {
+              radius: 6,
+              fillColor: "#50A9FC",
+              color: "#1e40af",
+              weight: 1.5,
+              fillOpacity: 0.9,
+            })
+              .bindPopup(
+                `<div style="min-width:160px">
+                  <b style="font-size:14px">${p.name}</b>
+                  <div style="color:#1e40af;font-size:11px;font-weight:600;margin-top:2px">DIVEROID Overlay</div>
+                  <div style="margin-top:6px;font-size:11px;color:#666">
+                    📍 ${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}
+                  </div>
+                 </div>`,
+              )
+              .addTo(map);
+            markers.push({ m, p });
+          });
+          setH3(10); // pts 로드 후 H3 재렌더
         })
-          .bindPopup(
-            `
-    <div style="min-width:160px">
-      <b style="font-size:14px">${p.name}</b><br>
-      <span style="color:#888;font-size:12px">${p.name_en}</span><br>
-      <div style="margin-top:6px;font-size:11px;color:#666">
-        📍 ${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}
-      </div>
-    </div>
-  `,
-          )
-          .addTo(map);
-        markers.push({ m, p });
-      });
+        .catch((e) => console.warn("overlay load failed", e));
 
       function searchPt(q) {
         if (!q) {
@@ -314,33 +273,6 @@
           }
         });
       }
-
-      // ── Bubble Tank Dive Team (서귀포 28개, 핑크) ──
-      const btLayer = L.layerGroup().addTo(map);
-      fetch("bubbletank-points.json")
-        .then((r) => r.json())
-        .then((sites) => {
-          sites.forEach((s) => {
-            const m = L.circleMarker([s.lat, s.lng], {
-              radius: 6,
-              fillColor: "#ec4899",
-              color: "#9d174d",
-              weight: 1.5,
-              fillOpacity: 0.9,
-            });
-            m.bindPopup(
-              `<div style="min-width:160px">
-                <b style="font-size:14px">${s.name}</b>
-                <div style="color:#9d174d;font-size:11px;font-weight:600;margin-top:2px">BUBBLE TANK Dive Team</div>
-                <div style="margin-top:6px;font-size:11px;color:#666">
-                  📍 ${s.lat.toFixed(6)}, ${s.lng.toFixed(6)}
-                </div>
-               </div>`,
-            );
-            m.addTo(btLayer);
-          });
-        })
-        .catch((e) => console.warn("bubbletank load failed", e));
 
       // ── Cool Dive Resort (서귀포 16개, 노란색) ──
       const coolLayer = L.layerGroup().addTo(map);
