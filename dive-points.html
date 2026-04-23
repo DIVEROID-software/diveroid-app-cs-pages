@@ -127,6 +127,28 @@
       .h3-btn:hover:not(.active) {
         background: #e8ecf2;
       }
+      .layer-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+        font-size: 12px;
+        color: #555;
+        cursor: pointer;
+        user-select: none;
+      }
+      .layer-row input[type="checkbox"] {
+        margin-right: 7px;
+        cursor: pointer;
+        accent-color: #50a9fc;
+      }
+      .layer-row .dot {
+        margin-right: 6px;
+      }
+      .layer-row .count {
+        margin-left: auto;
+        color: #aaa;
+        font-size: 11px;
+      }
       #tile-toggle {
         position: absolute;
         bottom: 16px;
@@ -148,7 +170,7 @@
     <div id="map"></div>
     <div id="panel">
       <h2>🤿 Jeju Dive Points</h2>
-      <div class="sub">Overlay POC · Mun Island (문섬)</div>
+      <div class="sub">제주도 전역 · 다중 소스 비교</div>
       <input
         id="search"
         type="text"
@@ -159,17 +181,46 @@
         <span>Total Points</span><span class="badge" id="total">9</span>
       </div>
       <hr />
-      <div class="legend"><span class="dot"></span>DIVEROID Overlay (29)</div>
-      <div class="legend">
+      <label class="layer-row">
+        <input
+          type="checkbox"
+          id="chk-overlay"
+          checked
+          onchange="toggleLayer('overlay', this.checked)"
+        />
+        <span class="dot"></span>DIVEROID Overlay
+        <span class="count" id="cnt-overlay">–</span>
+      </label>
+      <label class="layer-row">
+        <input
+          type="checkbox"
+          id="chk-logs"
+          checked
+          onchange="toggleLayer('logs', this.checked)"
+        />
         <span class="dot" style="background: #27ae60"></span>DIVEROID Log GPS
-      </div>
-      <div class="legend">
+        <span class="count" id="cnt-logs">–</span>
+      </label>
+      <label class="layer-row">
+        <input
+          type="checkbox"
+          id="chk-padi"
+          checked
+          onchange="toggleLayer('padi', this.checked)"
+        />
         <span class="dot" style="background: #9b59b6"></span>PADI Official Sites
-      </div>
-      <div class="legend">
+        <span class="count" id="cnt-padi">–</span>
+      </label>
+      <label class="layer-row">
+        <input
+          type="checkbox"
+          id="chk-cool"
+          checked
+          onchange="toggleLayer('cool', this.checked)"
+        />
         <span class="dot" style="background: #f1c40f"></span>Cool Dive Resort
-        (16)
-      </div>
+        <span class="count" id="cnt-cool">–</span>
+      </label>
       <hr />
       <div style="font-size: 11px; color: #999; margin-bottom: 4px">
         좌표 출처: 다이빙 리조트 지도 ↔ 구글맵 4점 정렬
@@ -224,11 +275,13 @@
       // ── DIVEROID Overlay (POC + BUBBLE TANK 통합, 파란색) ──
       let pts = [];
       const markers = [];
+      const overlayLayer = L.layerGroup().addTo(map);
       fetch("overlay-points.json")
         .then((r) => r.json())
         .then((data) => {
           pts = data;
           document.getElementById("total").textContent = data.length;
+          document.getElementById("cnt-overlay").textContent = data.length;
           data.forEach((p) => {
             const m = L.circleMarker([p.lat, p.lng], {
               radius: 6,
@@ -246,7 +299,7 @@
                   </div>
                  </div>`,
               )
-              .addTo(map);
+              .addTo(overlayLayer);
             markers.push({ m, p });
           });
           setH3(10); // pts 로드 후 H3 재렌더
@@ -255,7 +308,7 @@
 
       function searchPt(q) {
         if (!q) {
-          markers.forEach((x) => x.m.addTo(map));
+          markers.forEach((x) => x.m.addTo(overlayLayer));
           return;
         }
         q = q.toLowerCase();
@@ -264,9 +317,9 @@
             x.p.name.toLowerCase().includes(q) ||
             (x.p.name_en || "").toLowerCase().includes(q)
           ) {
-            x.m.addTo(map);
+            x.m.addTo(overlayLayer);
           } else {
-            map.removeLayer(x.m);
+            overlayLayer.removeLayer(x.m);
           }
         });
       }
@@ -276,6 +329,7 @@
       fetch("cooldive-points.json")
         .then((r) => r.json())
         .then((sites) => {
+          document.getElementById("cnt-cool").textContent = sites.length;
           sites.forEach((s) => {
             const m = L.circleMarker([s.lat, s.lng], {
               radius: 7,
@@ -303,6 +357,8 @@
       fetch("padi-jeju.json")
         .then((r) => r.json())
         .then((sites) => {
+          const valid = sites.filter((s) => s.latitude && s.longitude);
+          document.getElementById("cnt-padi").textContent = valid.length;
           sites.forEach((s) => {
             if (!s.latitude || !s.longitude) return;
             const m = L.circleMarker([s.latitude, s.longitude], {
@@ -328,12 +384,13 @@
         })
         .catch((e) => console.warn("padi load failed", e));
 
-      // ── DIVEROID 실제 로그 GPS 점들 (초록색) ──
+      // ── DIVEROID 실제 로그 GPS 점들 (제주도 전역, 초록색) ──
       const logsLayer = L.layerGroup().addTo(map);
       const canvasRenderer = L.canvas({ padding: 0.5 });
-      fetch("munseom-logs.json")
+      fetch("jeju-logs.json")
         .then((r) => r.json())
         .then((logs) => {
+          document.getElementById("cnt-logs").textContent = logs.length;
           logs.forEach(([lat, lng]) => {
             L.circleMarker([lat, lng], {
               renderer: canvasRenderer,
@@ -346,6 +403,23 @@
           });
         })
         .catch((e) => console.warn("logs load failed", e));
+
+      // ── 레이어 토글 ──
+      const layerMap = {
+        overlay: overlayLayer,
+        logs: logsLayer,
+        padi: padiLayer,
+        cool: coolLayer,
+      };
+      function toggleLayer(key, on) {
+        const layer = layerMap[key];
+        if (!layer) return;
+        if (on) {
+          if (!map.hasLayer(layer)) map.addLayer(layer);
+        } else {
+          if (map.hasLayer(layer)) map.removeLayer(layer);
+        }
+      }
 
       const h3Layer = L.layerGroup().addTo(map);
       function setH3(res) {
