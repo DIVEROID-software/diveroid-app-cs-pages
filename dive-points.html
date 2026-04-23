@@ -165,6 +165,9 @@
       <div class="legend">
         <span class="dot" style="background: #27ae60"></span>DIVEROID Log GPS
       </div>
+      <div class="legend">
+        <span class="dot" style="background: #9b59b6"></span>PADI Official Sites
+      </div>
       <hr />
       <div style="font-size: 11px; color: #999; margin-bottom: 4px">
         좌표 출처: 다이빙 리조트 지도 ↔ 구글맵 4점 정렬
@@ -304,6 +307,36 @@
           }
         });
       }
+
+      // ── PADI 공식 제주 Dive Sites (보라색, 별 모양) ──
+      const padiLayer = L.layerGroup().addTo(map);
+      fetch("padi-jeju.json")
+        .then((r) => r.json())
+        .then((sites) => {
+          sites.forEach((s) => {
+            if (!s.latitude || !s.longitude) return;
+            const m = L.circleMarker([s.latitude, s.longitude], {
+              radius: 10,
+              fillColor: "#9b59b6",
+              color: "#fff",
+              weight: 2,
+              fillOpacity: 0.9,
+            });
+            const types = (s.types || "").replace(/"/g, "");
+            m.bindPopup(
+              `<div style="min-width:170px">
+                <b style="font-size:14px">${s.title || "(no title)"}</b>
+                <div style="color:#9b59b6;font-size:11px;font-weight:600;margin-top:2px">PADI · ${s.location_title || ""}</div>
+                ${types ? `<div style="font-size:11px;color:#666;margin-top:4px">${types}</div>` : ""}
+                <div style="margin-top:6px;font-size:11px;color:#666">
+                  📍 ${s.latitude.toFixed(6)}, ${s.longitude.toFixed(6)}
+                </div>
+               </div>`,
+            );
+            m.addTo(padiLayer);
+          });
+        })
+        .catch((e) => console.warn("padi load failed", e));
 
       // ── DIVEROID 실제 로그 GPS 점들 (초록색) ──
       const logsLayer = L.layerGroup().addTo(map);
