@@ -172,6 +172,9 @@
         <span class="dot" style="background: #f1c40f"></span>Cool Dive Resort
         (16)
       </div>
+      <div class="legend">
+        <span class="dot" style="background: #ec4899"></span>BUBBLE TANK (28)
+      </div>
       <hr />
       <div style="font-size: 11px; color: #999; margin-bottom: 4px">
         좌표 출처: 다이빙 리조트 지도 ↔ 구글맵 4점 정렬
@@ -311,6 +314,33 @@
           }
         });
       }
+
+      // ── Bubble Tank Dive Team (서귀포 28개, 핑크) ──
+      const btLayer = L.layerGroup().addTo(map);
+      fetch("bubbletank-points.json")
+        .then((r) => r.json())
+        .then((sites) => {
+          sites.forEach((s) => {
+            const m = L.circleMarker([s.lat, s.lng], {
+              radius: 6,
+              fillColor: "#ec4899",
+              color: "#9d174d",
+              weight: 1.5,
+              fillOpacity: 0.9,
+            });
+            m.bindPopup(
+              `<div style="min-width:160px">
+                <b style="font-size:14px">${s.name}</b>
+                <div style="color:#9d174d;font-size:11px;font-weight:600;margin-top:2px">BUBBLE TANK Dive Team</div>
+                <div style="margin-top:6px;font-size:11px;color:#666">
+                  📍 ${s.lat.toFixed(6)}, ${s.lng.toFixed(6)}
+                </div>
+               </div>`,
+            );
+            m.addTo(btLayer);
+          });
+        })
+        .catch((e) => console.warn("bubbletank load failed", e));
 
       // ── Cool Dive Resort (서귀포 16개, 노란색) ──
       const coolLayer = L.layerGroup().addTo(map);
