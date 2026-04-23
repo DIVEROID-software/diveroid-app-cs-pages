@@ -9,6 +9,7 @@
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/h3-js@4.2.1/dist/h3-js.umd.js"></script>
     <style>
       * {
         margin: 0;
@@ -147,6 +148,29 @@
         좌표 출처: 다이빙 리조트 지도 ↔ 구글맵 4점 정렬
       </div>
       <button id="dl-btn" onclick="downloadCSV()">📥 Download CSV</button>
+      <hr />
+      <div
+        style="
+          font-size: 12px;
+          font-weight: 600;
+          margin-bottom: 6px;
+          color: #1a1a2e;
+        "
+      >
+        ⬡ H3 Hexagons
+      </div>
+      <div style="display: flex; gap: 4px; margin-bottom: 4px">
+        <button class="h3-btn" data-res="0" onclick="setH3(0)">Off</button>
+        <button class="h3-btn" data-res="8" onclick="setH3(8)">R8</button>
+        <button class="h3-btn" data-res="9" onclick="setH3(9)">R9</button>
+        <button class="h3-btn active" data-res="10" onclick="setH3(10)">
+          R10
+        </button>
+        <button class="h3-btn" data-res="11" onclick="setH3(11)">R11</button>
+      </div>
+      <div style="font-size: 10px; color: #999">
+        R8 ≈ 530m · R9 ≈ 200m · R10 ≈ 75m · R11 ≈ 28m
+      </div>
     </div>
     <div id="tile-toggle" onclick="toggleTile()">🛰️ Satellite</div>
     <script>
