@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>DIVEROID Jeju Dive Points (Overlay POC)</title>
+    <title>DIVEROID Global Dive Points</title>
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -169,8 +169,8 @@
   <body>
     <div id="map"></div>
     <div id="panel">
-      <h2>🤿 Jeju Dive Points</h2>
-      <div class="sub">제주도 전역 · 다중 소스 비교</div>
+      <h2>🤿 DIVEROID Global Dive Points</h2>
+      <div class="sub">전 세계 사용자 로그 · 다중 소스 비교</div>
       <input
         id="search"
         type="text"
@@ -252,7 +252,7 @@
     </div>
     <div id="tile-toggle" onclick="toggleTile()">🛰️ Satellite</div>
     <script>
-      const map = L.map("map").setView([33.2299, 126.5644], 15);
+      const map = L.map("map", { worldCopyJump: true }).setView([15, 125], 3);
 
       const light = L.tileLayer(
         "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
@@ -384,13 +384,14 @@
         })
         .catch((e) => console.warn("padi load failed", e));
 
-      // ── DIVEROID 실제 로그 GPS 점들 (제주도 전역, 초록색) ──
+      // ── DIVEROID 실제 로그 GPS 점들 (전 세계, 초록색) ──
       const logsLayer = L.layerGroup().addTo(map);
       const canvasRenderer = L.canvas({ padding: 0.5 });
-      fetch("jeju-logs.json")
+      fetch("global-logs.json")
         .then((r) => r.json())
         .then((logs) => {
-          document.getElementById("cnt-logs").textContent = logs.length;
+          document.getElementById("cnt-logs").textContent =
+            logs.length.toLocaleString();
           logs.forEach(([lat, lng]) => {
             L.circleMarker([lat, lng], {
               renderer: canvasRenderer,
