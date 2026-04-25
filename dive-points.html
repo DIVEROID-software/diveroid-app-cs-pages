@@ -258,16 +258,19 @@
         ⬡ H3 Hexagons
       </div>
       <div style="display: flex; gap: 4px; margin-bottom: 4px">
-        <button class="h3-btn" data-res="0" onclick="setH3(0)">Off</button>
+        <button class="h3-btn active" data-res="0" onclick="setH3(0)">
+          Off
+        </button>
         <button class="h3-btn" data-res="8" onclick="setH3(8)">R8</button>
         <button class="h3-btn" data-res="9" onclick="setH3(9)">R9</button>
-        <button class="h3-btn active" data-res="10" onclick="setH3(10)">
-          R10
-        </button>
+        <button class="h3-btn" data-res="10" onclick="setH3(10)">R10</button>
         <button class="h3-btn" data-res="11" onclick="setH3(11)">R11</button>
       </div>
       <div style="font-size: 10px; color: #999">
         R8 ≈ 530m · R9 ≈ 200m · R10 ≈ 75m · R11 ≈ 28m
+      </div>
+      <div style="font-size: 10px; color: #999; margin-top: 3px">
+        켜진 레이어 합산. R10/R11은 전세계 로그(39k)에서 무거울 수 있음.
       </div>
     </div>
     <div id="tile-toggle" onclick="toggleTile()">🛰️ Satellite</div>
@@ -292,6 +295,18 @@
           current === light ? "🛰️ Satellite" : "🗺️ Light";
       }
 
+      // ── 모든 레이어가 공유하는 normalized 포인트 레지스트리 ──
+      // sources[key] = [{ lat, lng, name, country, extra }, ...]
+      const sources = {};
+      const sourceLabels = {
+        overlay: "Bubble Tank Resort",
+        logs: "DIVEROID Log GPS",
+        padi: "PADI Official Sites",
+        cool: "Cool Dive Resort",
+        osm: "OSM Dive Sites",
+        wikidata: "Wikidata Dive Sites",
+      };
+
       // ── DIVEROID Overlay (POC + BUBBLE TANK 통합, 파란색) ──
       let pts = [];
       const markers = [];
@@ -300,6 +315,12 @@
         .then((r) => r.json())
         .then((data) => {
           pts = data;
+          sources.overlay = data.map((p) => ({
+            lat: p.lat,
+            lng: p.lng,
+            name: p.name || "",
+            country: "South Korea",
+          }));
           document.getElementById("total").textContent = data.length;
           document.getElementById("cnt-overlay").textContent = data.length;
           data.forEach((p) => {
@@ -322,7 +343,7 @@
               .addTo(overlayLayer);
             markers.push({ m, p });
           });
-          setH3(10); // pts 로드 후 H3 재렌더
+          renderH3();
         })
         .catch((e) => console.warn("overlay load failed", e));
 
@@ -349,7 +370,14 @@
       fetch("cooldive-points.json")
         .then((r) => r.json())
         .then((sites) => {
+          sources.cool = sites.map((s) => ({
+            lat: s.lat,
+            lng: s.lng,
+            name: s.name || "",
+            country: "South Korea",
+          }));
           document.getElementById("cnt-cool").textContent = sites.length;
+          renderH3();
           sites.forEach((s) => {
             const m = L.circleMarker([s.lat, s.lng], {
               radius: 7,
@@ -378,7 +406,15 @@
         .then((r) => r.json())
         .then((sites) => {
           const valid = sites.filter((s) => s.latitude && s.longitude);
+          sources.padi = valid.map((s) => ({
+            lat: s.latitude,
+            lng: s.longitude,
+            name: s.title || "",
+            country: "South Korea",
+            extra: (s.types || "").replace(/"/g, ""),
+          }));
           document.getElementById("cnt-padi").textContent = valid.length;
+          renderH3();
           sites.forEach((s) => {
             if (!s.latitude || !s.longitude) return;
             const m = L.circleMarker([s.latitude, s.longitude], {
@@ -410,8 +446,15 @@
       fetch("global-logs.json")
         .then((r) => r.json())
         .then((logs) => {
+          sources.logs = logs.map(([lat, lng]) => ({
+            lat,
+            lng,
+            name: "",
+            country: "",
+          }));
           document.getElementById("cnt-logs").textContent =
             logs.length.toLocaleString();
+          renderH3();
           logs.forEach(([lat, lng]) => {
             L.circleMarker([lat, lng], {
               renderer: canvasRenderer,
@@ -430,8 +473,18 @@
       fetch("osm-divesites.json")
         .then((r) => r.json())
         .then((sites) => {
+          sources.osm = sites.map((s) => ({
+            lat: s.lat,
+            lng: s.lng,
+            name: s.name || "",
+            country: "",
+            extra: Object.entries(s.tags || {})
+              .map(([k, v]) => `${k}=${v}`)
+              .join("; "),
+          }));
           document.getElementById("cnt-osm").textContent =
             sites.length.toLocaleString();
+          renderH3();
           sites.forEach((s) => {
             const tagBits = Object.entries(s.tags || {})
               .map(([k, v]) => `${k}=${v}`)
@@ -465,8 +518,15 @@
       fetch("wikidata-divesites.json")
         .then((r) => r.json())
         .then((sites) => {
+          sources.wikidata = sites.map((s) => ({
+            lat: s.lat,
+            lng: s.lng,
+            name: s.name || "",
+            country: s.country || "",
+          }));
           document.getElementById("cnt-wikidata").textContent =
             sites.length.toLocaleString();
+          renderH3();
           sites.forEach((s) => {
             L.circleMarker([s.lat, s.lng], {
               renderer: canvasRenderer,
@@ -508,50 +568,131 @@
         } else {
           if (map.hasLayer(layer)) map.removeLayer(layer);
         }
+        renderH3(); // 켜진 레이어만 H3 누적 → 토글 시 재렌더
       }
 
+      // ── H3 hex (모든 활성 레이어 합산) ──
       const h3Layer = L.layerGroup().addTo(map);
+      const h3CanvasRenderer = L.canvas({ padding: 0.5 });
+      let currentH3Res = 0; // 기본 Off (전 세계 39k 점에 R10 그리면 30k+ 폴리곤이라 무거움)
+      const MAX_H3_CELLS = 8000;
+      let h3LimitWarned = false;
+
       function setH3(res) {
-        h3Layer.clearLayers();
+        currentH3Res = res;
         document.querySelectorAll(".h3-btn").forEach((b) => {
           b.classList.toggle("active", parseInt(b.dataset.res) === res);
         });
-        if (!res) return;
+        renderH3();
+      }
+
+      function activeSources() {
+        const out = [];
+        for (const key of Object.keys(sources)) {
+          const cb = document.getElementById("chk-" + key);
+          if (cb && cb.checked && sources[key]) out.push(key);
+        }
+        return out;
+      }
+
+      function renderH3() {
+        h3Layer.clearLayers();
+        if (!currentH3Res) return;
+        const res = currentH3Res;
         const cellCounts = new Map();
-        pts.forEach((p) => {
-          const cell = h3.latLngToCell(p.lat, p.lng, res);
-          cellCounts.set(cell, (cellCounts.get(cell) || 0) + 1);
-        });
-        cellCounts.forEach((count, cell) => {
+        const cellSources = new Map();
+        for (const key of activeSources()) {
+          for (const p of sources[key]) {
+            if (p.lat == null || p.lng == null) continue;
+            const cell = h3.latLngToCell(p.lat, p.lng, res);
+            cellCounts.set(cell, (cellCounts.get(cell) || 0) + 1);
+            if (!cellSources.has(cell)) cellSources.set(cell, new Set());
+            cellSources.get(cell).add(key);
+          }
+        }
+        // 너무 많은 셀이면 상위 N개만 그림 (성능 보호)
+        let entries = [...cellCounts.entries()];
+        const total = entries.length;
+        if (total > MAX_H3_CELLS) {
+          entries.sort((a, b) => b[1] - a[1]);
+          entries = entries.slice(0, MAX_H3_CELLS);
+          if (!h3LimitWarned) {
+            console.warn(
+              `[H3] ${total.toLocaleString()} cells → rendering top ${MAX_H3_CELLS} by point count.`,
+            );
+            h3LimitWarned = true;
+          }
+        }
+        for (const [cell, count] of entries) {
           const boundary = h3.cellToBoundary(cell);
+          const srcs = [...(cellSources.get(cell) || [])]
+            .map((k) => sourceLabels[k] || k)
+            .join(", ");
           L.polygon(boundary, {
+            renderer: h3CanvasRenderer,
             color: "#FF6B35",
-            weight: 2,
+            weight: 1,
             fillColor: "#FF6B35",
-            fillOpacity: 0.15 + Math.min(count - 1, 3) * 0.1,
+            fillOpacity: 0.15 + Math.min(count - 1, 4) * 0.1,
           })
             .bindPopup(
-              `<div><b>H3 Cell</b><br>` +
+              `<div style="min-width:170px"><b>H3 Cell</b><br>` +
                 `<span style="font-family:monospace;font-size:11px">${cell}</span><br>` +
-                `<span style="font-size:12px;color:#666">Res ${res} · ${count} point${count > 1 ? "s" : ""}</span></div>`,
+                `<span style="font-size:12px;color:#666">Res ${res} · ${count.toLocaleString()} point${count > 1 ? "s" : ""}</span><br>` +
+                `<span style="font-size:11px;color:#888">${srcs}</span></div>`,
             )
             .addTo(h3Layer);
-        });
+        }
       }
-      setH3(10);
 
+      // 초기 활성 버튼: Off
+      document
+        .querySelectorAll(".h3-btn")
+        .forEach((b) => b.classList.remove("active"));
+      const offBtn = document.querySelector('.h3-btn[data-res="0"]');
+      if (offBtn) offBtn.classList.add("active");
+
+      // ── CSV 다운로드 (켜진 레이어 전부 합쳐서) ──
+      function csvEscape(v) {
+        if (v == null) return "";
+        const s = String(v);
+        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      }
       function downloadCSV() {
-        const rows = ["﻿name,name_en,lat,lng"];
-        pts.forEach((p) =>
-          rows.push(`${p.name},${p.name_en},${p.lat},${p.lng}`),
-        );
+        const active = activeSources();
+        if (!active.length) {
+          alert("켜진 레이어가 없어요. 체크박스를 하나 이상 켜고 다시 시도.");
+          return;
+        }
+        const rows = ["﻿source,name,lat,lng,country,extra"];
+        let total = 0;
+        for (const key of active) {
+          const label = sourceLabels[key] || key;
+          for (const p of sources[key]) {
+            rows.push(
+              [
+                csvEscape(label),
+                csvEscape(p.name),
+                p.lat,
+                p.lng,
+                csvEscape(p.country),
+                csvEscape(p.extra),
+              ].join(","),
+            );
+            total += 1;
+          }
+        }
         const blob = new Blob([rows.join("\n")], {
           type: "text/csv;charset=utf-8;",
         });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = "jeju_munseom_points.csv";
+        const stamp = new Date().toISOString().slice(0, 10);
+        a.download = `diveroid_dive_points_${stamp}.csv`;
         a.click();
+        console.log(
+          `[CSV] exported ${total.toLocaleString()} rows from ${active.length} layer(s)`,
+        );
       }
     </script>
   </body>
