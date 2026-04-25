@@ -221,9 +221,29 @@
         <span class="dot" style="background: #f1c40f"></span>Cool Dive Resort
         <span class="count" id="cnt-cool">–</span>
       </label>
+      <label class="layer-row">
+        <input
+          type="checkbox"
+          id="chk-osm"
+          checked
+          onchange="toggleLayer('osm', this.checked)"
+        />
+        <span class="dot" style="background: #e74c3c"></span>OSM Dive Sites
+        <span class="count" id="cnt-osm">–</span>
+      </label>
+      <label class="layer-row">
+        <input
+          type="checkbox"
+          id="chk-wikidata"
+          checked
+          onchange="toggleLayer('wikidata', this.checked)"
+        />
+        <span class="dot" style="background: #ff8c00"></span>Wikidata Dive Sites
+        <span class="count" id="cnt-wikidata">–</span>
+      </label>
       <hr />
       <div style="font-size: 11px; color: #999; margin-bottom: 4px">
-        좌표 출처: 다이빙 리조트 지도 ↔ 구글맵 4점 정렬
+        OSM © OpenStreetMap contributors (ODbL) · Wikidata CC0
       </div>
       <button id="dl-btn" onclick="downloadCSV()">📥 Download CSV</button>
       <hr />
@@ -405,12 +425,80 @@
         })
         .catch((e) => console.warn("logs load failed", e));
 
+      // ── OSM Dive Sites (전 세계, 빨간색) ──
+      const osmLayer = L.layerGroup().addTo(map);
+      fetch("osm-divesites.json")
+        .then((r) => r.json())
+        .then((sites) => {
+          document.getElementById("cnt-osm").textContent =
+            sites.length.toLocaleString();
+          sites.forEach((s) => {
+            const tagBits = Object.entries(s.tags || {})
+              .map(([k, v]) => `${k}=${v}`)
+              .join(", ");
+            L.circleMarker([s.lat, s.lng], {
+              renderer: canvasRenderer,
+              radius: 4,
+              fillColor: "#e74c3c",
+              color: "#c0392b",
+              weight: 1,
+              fillOpacity: 0.85,
+            })
+              .bindPopup(
+                `<div style="min-width:170px">
+                  <b style="font-size:14px">${s.name || "(unnamed)"}</b>
+                  <div style="color:#c0392b;font-size:11px;font-weight:600;margin-top:2px">OpenStreetMap</div>
+                  ${tagBits ? `<div style="font-size:11px;color:#666;margin-top:4px">${tagBits}</div>` : ""}
+                  <div style="margin-top:6px;font-size:11px;color:#666">
+                    📍 ${s.lat.toFixed(6)}, ${s.lng.toFixed(6)}
+                  </div>
+                  <a href="https://www.openstreetmap.org/${s.type}/${s.id}" target="_blank" style="display:inline-block;margin-top:6px;font-size:11px;color:#3d95e8">View on OSM →</a>
+                 </div>`,
+              )
+              .addTo(osmLayer);
+          });
+        })
+        .catch((e) => console.warn("osm load failed", e));
+
+      // ── Wikidata Dive Sites (전 세계, 주황색) ──
+      const wikidataLayer = L.layerGroup().addTo(map);
+      fetch("wikidata-divesites.json")
+        .then((r) => r.json())
+        .then((sites) => {
+          document.getElementById("cnt-wikidata").textContent =
+            sites.length.toLocaleString();
+          sites.forEach((s) => {
+            L.circleMarker([s.lat, s.lng], {
+              renderer: canvasRenderer,
+              radius: 5,
+              fillColor: "#ff8c00",
+              color: "#cc7000",
+              weight: 1,
+              fillOpacity: 0.9,
+            })
+              .bindPopup(
+                `<div style="min-width:170px">
+                  <b style="font-size:14px">${s.name || "(unnamed)"}</b>
+                  <div style="color:#cc7000;font-size:11px;font-weight:600;margin-top:2px">Wikidata · ${s.country || ""}</div>
+                  <div style="margin-top:6px;font-size:11px;color:#666">
+                    📍 ${s.lat.toFixed(6)}, ${s.lng.toFixed(6)}
+                  </div>
+                  <a href="https://www.wikidata.org/wiki/${s.qid}" target="_blank" style="display:inline-block;margin-top:6px;font-size:11px;color:#3d95e8">View on Wikidata →</a>
+                 </div>`,
+              )
+              .addTo(wikidataLayer);
+          });
+        })
+        .catch((e) => console.warn("wikidata load failed", e));
+
       // ── 레이어 토글 ──
       const layerMap = {
         overlay: overlayLayer,
         logs: logsLayer,
         padi: padiLayer,
         cool: coolLayer,
+        osm: osmLayer,
+        wikidata: wikidataLayer,
       };
       function toggleLayer(key, on) {
         const layer = layerMap[key];
