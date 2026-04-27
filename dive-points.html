@@ -270,7 +270,7 @@
         R8 ≈ 530m · R9 ≈ 200m · R10 ≈ 75m · R11 ≈ 28m
       </div>
       <div style="font-size: 10px; color: #999; margin-top: 3px">
-        켜진 레이어 합산. R10/R11은 전세계 로그(39k)에서 무거울 수 있음.
+        켜진 레이어 합산. R10/R11은 전세계 로그(189k)에서 무거울 수 있음.
       </div>
     </div>
     <div id="tile-toggle" onclick="toggleTile()">🛰️ Satellite</div>
@@ -574,7 +574,7 @@
       // ── H3 hex (모든 활성 레이어 합산) ──
       const h3Layer = L.layerGroup().addTo(map);
       const h3CanvasRenderer = L.canvas({ padding: 0.5 });
-      let currentH3Res = 0; // 기본 Off (전 세계 39k 점에 R10 그리면 30k+ 폴리곤이라 무거움)
+      let currentH3Res = 0; // 기본 Off (전 세계 189k 점에 R10 그리면 폴리곤이 매우 많아짐)
       const MAX_H3_CELLS = 8000;
       let h3LimitWarned = false;
 
