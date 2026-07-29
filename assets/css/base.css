@@ -138,40 +138,6 @@ body {
   display: block;
 }
 
-/* ── Language Switcher (dev/test helper — not in Figma design) ── */
-.lang-switcher {
-  display: flex;
-  gap: 8px;
-  padding: 8px 20px;
-  background: var(--white);
-  border-bottom: 1px solid var(--gray-03);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.lang-switcher::-webkit-scrollbar {
-  display: none;
-}
-
-.lang-btn {
-  background: transparent;
-  border: 1px solid var(--gray-04);
-  color: var(--gray-08);
-  padding: 3px 14px;
-  border-radius: 14px;
-  font-family: var(--font);
-  font-size: 13px;
-  cursor: pointer;
-  white-space: nowrap;
-  -webkit-tap-highlight-color: transparent;
-}
-.lang-btn.active {
-  background: var(--black);
-  border-color: var(--black);
-  color: var(--white);
-  font-weight: 700;
-}
-
 /* ── Content Wrapper ── */
 .content-wrapper {
   padding: 26px var(--page-padding) 60px;

@@ -34,12 +34,6 @@
       </button>
     </div>
 
-    <!-- Language Switcher -->
-    <div class="lang-switcher">
-      <button class="lang-btn active" onclick="setLang('en')">English</button>
-      <button class="lang-btn" onclick="setLang('ko')">한국어</button>
-    </div>
-
     <div class="content-wrapper" id="content-root"></div>
 
     <script src="../assets/js/bridge.js"></script>
@@ -96,12 +90,6 @@
 
       function setLang(lang) {
         currentLang = lang;
-        document.querySelectorAll(".lang-btn").forEach(function (btn) {
-          btn.classList.remove("active");
-        });
-        document
-          .querySelector("[onclick=\"setLang('" + lang + "')\"]")
-          .classList.add("active");
         render();
         window.ReactNativeWebView &&
           window.ReactNativeWebView.postMessage(
@@ -115,22 +103,10 @@
       // Init
       (function () {
         var params = new URLSearchParams(window.location.search);
-        var lang = params.get("lang");
         var tab = params.get("tab");
-        currentLang = lang === "ko" ? "ko" : "en";
-        if (!lang && (navigator.language || "").startsWith("ko"))
-          currentLang = "ko";
+        currentLang = initLang();
         if (tab === "warranty") currentTab = "warranty";
 
-        // Sync lang button state
-        document.querySelectorAll(".lang-btn").forEach(function (btn) {
-          btn.classList.remove("active");
-        });
-        document
-          .querySelector("[onclick=\"setLang('" + currentLang + "')\"]")
-          .classList.add("active");
-
-        // Sync tab button state
         document.querySelectorAll(".tab-btn").forEach(function (btn) {
           btn.classList.remove("active");
         });
