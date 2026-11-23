@@ -13,7 +13,7 @@
     <!-- App Bar -->
     <div class="page-header">
       <button class="btn-close" onclick="closePage()">✕</button>
-      <h1>Terms of Use</h1>
+      <h1 id="page-title">Terms of Use</h1>
     </div>
 
     <!-- Tab Bar -->
@@ -71,6 +71,10 @@
 
         document.getElementById("content-root").innerHTML = html;
 
+        document.documentElement.lang = currentLang;
+        document.getElementById("page-title").textContent = data.pageTitle;
+        document.title = data.pageTitle + " — DIVEROID";
+
         // Update tab labels for current language
         var labels = data.tabLabels;
         document.getElementById("tab-purchase-btn").textContent =
@@ -89,11 +93,11 @@
       }
 
       function setLang(lang) {
-        currentLang = lang;
+        currentLang = lang === "ko" ? "ko" : "en";
         render();
         window.ReactNativeWebView &&
           window.ReactNativeWebView.postMessage(
-            JSON.stringify({ type: "langChanged", lang: lang }),
+            JSON.stringify({ type: "langChanged", lang: currentLang }),
           );
       }
 

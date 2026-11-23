@@ -267,7 +267,7 @@ window.PAGE_CONTENT = {
   },
 
   ko: {
-    pageTitle: "이용약관",
+    pageTitle: "서비스 이용약관",
     tabLabels: {
       purchase: "구매 및 환불 정책",
       warranty: "DIVEROID 제품 보증",
